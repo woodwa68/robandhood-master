@@ -1,0 +1,10 @@
+root: true
+extends: eslint-config-silverwind
+
+overrides:
+  - files: ["client/**/*.js"]
+    rules:
+      no-var: [0]
+      prefer-arrow-callback: [0]
+      prefer-spread: [0]
+      prefer-rest-params: [0]
