@@ -17,6 +17,14 @@ const utils      = require("./utils.js");
 const themesPath = path.join(paths.mod, "/node_modules/codemirror/theme");
 const modesPath  = path.join(paths.mod, "/node_modules/codemirror/mode");
 const cachePath  = path.join(paths.mod, "dist", "cache.json");
+const autoprefixer = require("autoprefixer");
+const  brotli = require("iltorb").compress;
+
+const   handlebars = require("handlebars");
+const   htmlMinifier = require("html-minifier");
+const   postcss = require("postcss");
+const   uglify = require("uglify-es");
+const   svg = require("./svg.js");
 
 let minify;
 
@@ -90,8 +98,9 @@ const opts = {
     lgblock: 0,
   }
 };
+const  cleanCSS = new (require("clean-css"))(opts.cleanCSS);
 
-let autoprefixer, cleanCSS, postcss, uglify, htmlMinifier, brotli, svg, handlebars;
+/*let autoprefixer, cleanCSS, postcss, uglify, htmlMinifier, brotli, svg, handlebars;
 try {
   autoprefixer = require("autoprefixer");
   brotli = require("iltorb").compress;
@@ -101,7 +110,7 @@ try {
   postcss = require("postcss");
   uglify = require("uglify-es");
   svg = require("./svg.js");
-} catch (err) {}
+} catch (err) {}*/
 
 resources.files = {
   css: [
