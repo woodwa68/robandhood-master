@@ -56,7 +56,7 @@ np.random.seed(19680801)
 #
 # This class plots data it receives from a pipe.
 #
-
+refreshInterval = 200
 
 
 class ProcessPlotter(object):
@@ -96,7 +96,7 @@ class ProcessPlotter(object):
        
         
         
-    #     for index in range(3):
+    #     for index in range(1):
     #         print(snapshot1[0][1])
     #         i = 0;
      
@@ -134,6 +134,7 @@ class ProcessPlotter(object):
          
 
     def graph(self):
+        
         for index in range(3):
             item = self.stock;
             i =  self.ax[index][0]
@@ -141,31 +142,36 @@ class ProcessPlotter(object):
            
             Ys = np.diff(np.array(self.volumeData2[item][index]));
             
-           
+            
             YsSorted = Ys;
             YsSorted = list(Ys)
-            YsSorted.sort();
+            #YsSorted.sort();
             Xs = np.array(range(len(Ys)))
+            
         
            
             if(len(Ys)==0):
                 continue;
 
-            self.ax[index][1].clear()
+            #self.ax[index][1].clear()
             self.ax[index][1].axhline(y=0, color='k')
-            self.ax[index][1].plot(Xs, YsSorted,  'b,' )
-            verts = [(Xs[0], 0)] + list(zip(Xs, YsSorted)) + [(Xs[-1], 0)]
-            poly = Polygon(verts, facecolor='0.9', edgecolor='0.0')
-            self.ax[index][1].add_patch(poly) 
+            
+            self.ax[index][1].plot(Xs, YsSorted,  'b-' )
+            
+            # verts = [(Xs[0], 0)] + list(zip(Xs, YsSorted)) + [(Xs[-1], 0)]
+            # poly = Polygon(verts, facecolor='0.9', edgecolor='0.0')
+            # self.ax[index][1].add_patch(poly) 
 
             thirdGraph = self.ax[index][2];
-            thirdGraph.clear()
-            thirdGraph.axhline(y=0, color='k')
-            thirdGraph.plot(Xs, Ys,  'b,' )
-            verts2 = [(Xs[0], 0)] + list(zip(Xs, Ys)) + [(Xs[-1], 0)]
-            poly2 = Polygon(verts2, facecolor='0.9', edgecolor='0.0')
-            thirdGraph.add_patch(poly2) 
+            #thirdGraph.clear()
 
+            thirdGraph.axhline(y=0, color='k')
+            
+            thirdGraph.plot(Xs, Ys,  'b-' )
+            # verts2 = [(Xs[0], 0)] + list(zip(Xs, Ys)) + [(Xs[-1], 0)]
+            # poly2 = Polygon(verts2, facecolor='0.9', edgecolor='0.0')
+            # thirdGraph.add_patch(poly2) 
+            
 
             if len(Ys) > self.aggsLength[index]:
                 #self.timeData[item][index].pop(0)
@@ -173,23 +179,29 @@ class ProcessPlotter(object):
                 Xs = np.array(range(len(Ys)))
 
             
-            i.clear();
-            i.scatter(Xs, Ys );
+            #i.clear();
+            #i.scatter(Xs, Ys );
+            
+            
+            
+        
 
-            result = np.polyfit(Xs, Ys, 2)
+         
 
-            p = np.poly1d(result);
-            yhat = p(Xs)                         # or [p(z) for z in x]
-            ybar = np.sum(Ys)/len(Ys)          # or sum(y)/len(y)
-            ssreg = np.sum((yhat-ybar)**2)   # or sum([ (yihat - ybar)**2 for yihat in yhat])
-            sstot = np.sum((Ys - ybar)**2)    # or sum([ (yi - ybar)**2 for yi in y])
-            rsquared = ssreg / sstot
+            #result = np.polyfit(Xs, Ys, 2)
+
+            # p = np.poly1d(result);
+            # yhat = p(Xs)                         # or [p(z) for z in x]
+            # ybar = np.sum(Ys)/len(Ys)          # or sum(y)/len(y)
+            # ssreg = np.sum((yhat-ybar)**2)   # or sum([ (yihat - ybar)**2 for yihat in yhat])
+            # sstot = np.sum((Ys - ybar)**2)    # or sum([ (yi - ybar)**2 for yi in y])
+            # rsquared = ssreg / sstot
             
             
            
                        
-            self.ax[index][0].plot(Xs, p(Xs), 'r-')
-            self.ax[index][0].text(Xs[0],Ys[0],rsquared)
+            # self.ax[index][0].plot(Xs, p(Xs), 'r-')
+            # self.ax[index][0].text(Xs[0],Ys[0],rsquared)
 
             # dprice = np.diff(self.priceData[item][index])
             # v = np.diff(self.volumeData2[item][index]);
@@ -204,7 +216,7 @@ class ProcessPlotter(object):
 
 
     def call_back(self):
-     
+        
         while self.pipe.poll():
             command = self.pipe.recv()
             if command is None:
@@ -230,6 +242,9 @@ class ProcessPlotter(object):
                 self.ax[0][1].clear()
                 self.ax[1][1].clear()
                 self.ax[2][1].clear()
+                self.ax[0][2].clear()
+                self.ax[1][2].clear()
+                self.ax[2][2].clear()
 
 
 
@@ -262,76 +277,30 @@ class ProcessPlotter(object):
                     
 
 
-
+        time1 = time.time()
         for item in self.b1.items():
+
             
             index = 0;
             while index< 3:
-             
-                if (self.a % (self.aggs[index]*5) == 0) == False:
+                
+                if ((self.a/(1000/refreshInterval)) % (self.aggs[index]) == 0) == False:
                     index += 1
                     continue
-
-                    
+                
           
-                total_frame1 = self.b1.total_frame(date_time= True, labels=True);
-                
-                self.priceData[item][index].append( float(total_frame1[item].LAST[0]) );
-
-                
-                self.volumeData2[item][index].append(float(total_frame1[item].VOLUME[0]));
-                
-           
-
-                
-                if(item == 'SPY' and (self.a == 60 or self.a == 45)):
-                   self.socketIO.emit('getinfo','PLEASE FUCKING WORK')
-               
-                
-       
                 
                 
-
-                
-                    #self.volumeData2[item][index].pop(0)
-         
-                
-
-                # if(item == self.stock):
-                
-                #     i.clear();
-                #     i.scatter(Xs, Ys)
-
-            
-
-                # result = np.polyfit(Xs, Ys, 2)
-
-                # p = np.poly1d(result);
-                # yhat = p(Xs)                         # or [p(z) for z in x]
-                # ybar = np.sum(Ys)/len(Ys)          # or sum(y)/len(y)
-                # ssreg = np.sum((yhat-ybar)**2)   # or sum([ (yihat - ybar)**2 for yihat in yhat])
-                # sstot = np.sum((Ys - ybar)**2)    # or sum([ (yi - ybar)**2 for yi in y])
-                # rsquared = ssreg / sstot
-
-               
-                # if np.isnan(result[0]) == False:
-                        
-      
-                #     if(item == self.stock):
-                #         self.ax[index][1].clear()
-                #         self.ax[index][1].axhline(y=0, color='k')
-                #         self.ax[index][1].plot(self.timeData[item][index], self.volumeData2[item][index], 'b,' )
-                #         verts = [(self.timeData[item][index][0], 0)] + list(zip(self.timeData[item][index], self.volumeData2[item][index])) + [(self.timeData[item][index][-1], 0)]
-                #         poly = Polygon(verts, facecolor='0.9', edgecolor='0.0')
-
-                #         self.ax[index][1].add_patch(poly) 
-                                   
-                #         self.ax[index][0].plot(Xs, p(Xs), 'r-')
-                #         self.ax[index][0].text(Xs[0],Ys[0],rsquared)
-                    
+                #self.priceData[item][index].append( float(self.b1.get(item,'LAST')));
+                self.volumeData2[item][index].append(float(self.b1.get(item,'VOLUME')));
+                  
 
                 index += 1
+                
                 self.graph();
+
+        print(time.time()- time1)
+                
         self.a += 1
         self.fig.suptitle(self.stock)
 
@@ -345,7 +314,7 @@ class ProcessPlotter(object):
     def __call__(self, pipe):
         print('starting plotter...')
         tosdb.init(dllpath="C:/TOSDataBridge-master/bin/Release/Win32/tos-databridge-0.9-x86.dll")
-        b1 = tosdb.TOSDB_DataBlock(1000, True);
+        b1 = tosdb.TOSDB_DataBlock(50, True);
         b1.add_topics('Volume');
         b1.add_topics('Last');
 
@@ -358,8 +327,7 @@ class ProcessPlotter(object):
         for item in b1.items():
             self.volumeData2[item] = [[],[],[]];
             self.priceData[item] = [[],[],[]];
-         
-        
+
 
         self.pipe = pipe
         self.fig, self.ax = plt.subplots(3,3, sharex=False)
@@ -367,12 +335,7 @@ class ProcessPlotter(object):
         self.fig.tight_layout()
         self.fig.subplots_adjust(top=.95)
 
-        #plt.tight_layout()
-
-        
-
-      
-        timer = self.fig.canvas.new_timer(interval=100)
+        timer = self.fig.canvas.new_timer(interval=refreshInterval)
         timer.add_callback(self.call_back)
         timer.start()
         self.socketIO = sio('localhost', 5000,  wait_for_connection=False)

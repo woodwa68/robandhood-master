@@ -121,15 +121,17 @@ log.timestamp = function() {
 };
 
 log.logo = function(line1, line2, line3) {
-  log.plain(chalk.blue([
+  log.plain([
     "\n",
-    "           .:.\n",
-    `    :::  .:::::.   ${line1}\n`,
-    `  ..:::..  :::     ${line2}\n`,
-    `   ':::'   :::     ${line3}\n`,
-    "     '\n",
-  ].join("")));
+    chalk.green("           .:.\n"),
+    chalk.red(`    :::  `)+chalk.green(`.:::::.   ${line1}\n`),
+    chalk.red(`  ..:::..`)+chalk.green(`  :::     ${line2}\n`),
+    chalk.red(`   ':::' `)+chalk.green(`  :::     ${line3}\n`),
+    chalk.red("     '\n"),
+  ].join(""));
 };
+
+
 
 log.formatHostPort = function(host, port, proto) {
   const str = format({hostname: host, port: port});

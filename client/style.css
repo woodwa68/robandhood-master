@@ -169,7 +169,7 @@ path {
 
 }
 
-.limit-order, .buys, .buy svg{
+.limit-order, .buys[data-id], .buy svg{
 	fill: #20ce99;
   color: #20ce99;
 }
@@ -177,7 +177,7 @@ path {
 
 
 .sell svg,
-.sells,
+.sells[data-id],
 .stop-order{
   color: #ce3d20;
 }
@@ -316,8 +316,8 @@ path {
   display: flex;
   order: -1;
   color: #555;
-  font-size: .4rem;
-  height: 1.3em;
+  font-size: .82rem;
+  height: 1.5em;
   border-bottom: 1px solid #bbb;
   background: #e0e0e0;
   user-select: none;
@@ -352,7 +352,7 @@ path {
 
 input[placeholder] {
 	font-size: 85%;
-  width: 47px;
+  width: 100%;
  	-webkit-appearance: textfield;
     background-color: white;
     -webkit-rtl-ordering: logical;
@@ -374,10 +374,9 @@ input.order-type {
 }
 
 .mtime {
-  flex: 0 0 9rem;
+  flex: 0 0 4.5rem;
   padding-right: .35rem;
   align-items: center !important;
-  justify-content: space-around;
   white-space: nowrap;
 }
 
@@ -386,7 +385,9 @@ input.order-type {
 .basicStockInfo{
 	font-size: 90%;
 	display: flex;
-	flex: 0 0 15rem;
+	flex: 0 0 20rem;
+  border-right: 1px solid #b1b1b1;
+  margin-right: 5px;
 }
 .data-row.selected > .entry-link,
 .data-row.selected > .basicStockInfo >.avg-buy-price,
@@ -412,19 +413,14 @@ input.order-type {
 	flex: 1.25;
 }
 
-.shares{
-	flex: 1;
-}
-
+.shares,
+.buys,
 .sells{
 	flex: 1;
-	 
 }
 
 
-.buys{
-	flex: 1;
-}
+
 
 
 .newview, .path, .prefs, .about, .af, .ad, .cf, .cd{
@@ -599,11 +595,12 @@ a.quantity-button.percent-five{
 }
 
 .quantity {
-  display: flex;
   padding-right: .35rem;
   flex-direction: row;
   justify-content: space-around;
   white-space: nowrap;
+  flex: 0 0 13.5rem;
+  justify-content: left;
 }
 
 .header-size, .size {
@@ -675,14 +672,7 @@ a.quantity-button.percent-five{
     flex: 1 1;
   }
 
-  .quantity{
-    justify-content: center;
-    padding: .4rem;
-  }
-  .quantity{
-    justify-content: center;
-    padding: .4rem;
-  }
+
   .orders{
     flex-wrap: wrap;
   }
@@ -698,7 +688,7 @@ a.quantity-button.percent-five{
 .data-row, .data-row a { color: #333 }
 
 .data-row.selected{
-	background: #b1b1b1;
+	background: #cecece;
 	
 }
 
@@ -729,7 +719,7 @@ a.quantity-button.percent-five{
 }
 
 .entry-link {
-  flex: 0 0 2.9rem;
+  flex: 0 0 3.9rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -909,7 +899,7 @@ html:not(.mobile) #entry-menu a.active {
   float: left;
 }
 
-#entry-menu a.play, #entry-menu.type-folder a.edit {
+#entry-menu a.play, #entry-menu a.edit, #entry-menu a.openfile, #entry-menu a.rename, #entry-menu a.copy, #entry-menu a.cut {
   display: none;
 }
 

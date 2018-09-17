@@ -1,4 +1,33 @@
 <div class="file-header">
+  <span class="basicStockInfo" >
+    <span class="file-link entry-link" data-toggle="popover" title="Popover Header" data-content="Some content inside the popover" >Symbol</span>
+
+    <span class="avg-buy-price">Avg. Price</span>
+    <span class="shares" ># Owned</span>
+    <span class="buys" >Orders</span>
+    <span class="sells" >For Sale</span>
+  </span>
+  <span class="mtime" data-timestamp="{{mtime}}">
+   
+  
+  
+    Price
+  </span>
+  <span class="quantity">
+    Quantity
+    <span class="fractions">
+     
+    </span>
+    
+    
+    
+   
+
+
+  </span>
+  
+
+  <span class="orders" > </span>
   
 </div>
 {{#each entries}}
@@ -27,13 +56,15 @@
 
 
       <span class="mtime" data-timestamp="{{mtime}}">
-          <span class="percents">
+        <!--
+        <span class="percents">
           <a href="" class="quantity-button percent-one"><span>{{percentone}}</span></a>
           <a href="" class="quantity-button percent-two"><span>{{percenttwo}}</span></a>
           <a href="" class="quantity-button percent-three"><span>{{percentthree}}</span></a>
           <a href="" class="quantity-button percent-four"><span>{{percentfour}}</span></a>
           <a href="" class="quantity-button percent-five"><span>{{percentfive}}</span></a>
         </span>
+        -->
       
       
         <input class="price" type="text" placeholder="" >

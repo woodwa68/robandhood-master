@@ -89,14 +89,15 @@
                 float = float.substring(float.lastIndexOf('">')+2);
                 $(document).find('#float').html('Float: <b>' + float + '</b>');
               }*/
-              $(document).find('#sentiment').attr('src', 'https://stocktwits.com/symbol/' + $this.html());
+             // $(document).find('#sentiment').attr('src', 'https://stocktwits.com/symbol/' + $this.html());
 
 
               var newsRequest = new XMLHttpRequest();
               newsRequest.open('GET', 'https://www.marketwatch.com/investing/stock/'+$this.html()+'/news', false); // `false` makes the request synchronous
-              newsRequest.send(null);
+              newsRequest.send();
 
               if (newsRequest.status === 200) {
+                console.log(343)
                 var news = $(newsRequest.responseText).find('#maincontent');
                 $('#news').html(news);
 
@@ -1899,7 +1900,7 @@
 
     var instrumentRequest = new XMLHttpRequest();
     instrumentRequest.open("GET", "https://api.robinhood.com/instruments/?symbol=" + symbol, true);
-    instrumentRequest.setRequestHeader('Authorization', "Token " + token);
+    instrumentRequest.setRequestHeader('Authorization', "Bearer " + token);
 
 
 
@@ -1912,7 +1913,7 @@
 
           var orderRequest = new XMLHttpRequest();
           orderRequest.open("POST", "https://api.robinhood.com/orders/", true);
-          orderRequest.setRequestHeader('Authorization', "Token " + token);
+          orderRequest.setRequestHeader('Authorization', "Bearer " + token);
           orderRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=utf-8');
 
           orderRequest.onload = function(e) {
@@ -3975,16 +3976,16 @@
 
   function getToken(view, callback) {
     var xhr = new XMLHttpRequest();
-    xhr.open("POST", "https://api.robinhood.com/api-token-auth/", true);
+    xhr.open("POST", "https://api.robinhood.com/oauth2/token/", true);
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=utf-8');
     xhr.onload = function(e) {
       if (xhr.readyState === 4) {
         if (xhr.status === 200) {
-          token = JSON.parse(xhr.responseText)['token'];
+          token = JSON.parse(xhr.responseText)['access_token'];
           var getAccountID = new XMLHttpRequest();
           getAccountID.open("GET", "https://api.robinhood.com/accounts/", true);
           getAccountID.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=utf-8');
-          getAccountID.setRequestHeader('Authorization', "Token "+token);
+          getAccountID.setRequestHeader('Authorization', "Bearer "+token);
 
           getAccountID.onload = function(e) {
             if (getAccountID.readyState === 4) {
@@ -4009,7 +4010,7 @@
       pause = false;
 
     };
-    xhr.send('username=' + user + '&password=' + pass);
+    xhr.send('username=' + user + '&password=' + pass+'&grant_type=password'+'&client_id=c82SH0WZOsabOXGP2sxqcj34FxkvfnWRZBKlBjFS');
   }
 
   function getQuote(symbol, view, callback) {
@@ -4017,7 +4018,7 @@
     var quoteRequest = new XMLHttpRequest();
 
     quoteRequest.open("GET", "https://api.robinhood.com/quotes/" + symbol + '/', true);
-    // quoteRequest.setRequestHeader('Authorization', "Token "+token);
+    // quoteRequest.setRequestHeader('Authorization', "Bearer "+token);
 
     quoteRequest.onload = function(e) {
       if (quoteRequest.readyState === 4) {
@@ -4044,7 +4045,7 @@
 
     var positionRequest = new XMLHttpRequest();
     positionRequest.open("GET", 'https://api.robinhood.com/positions/' + account_number + '/' + instrument + '/', true);
-    positionRequest.setRequestHeader('Authorization', "Token " + token);
+    positionRequest.setRequestHeader('Authorization', "Bearer " + token);
     positionRequest.setRequestHeader('Accept', "application/json");
     positionRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=utf-8');
 
@@ -4109,7 +4110,7 @@
     /*getToken(view, function(token) {*/
     var positionRequest = new XMLHttpRequest();
     positionRequest.open("GET", 'https://api.robinhood.com/accounts/' + account_number + '/positions/?nonzero=true', true);
-    positionRequest.setRequestHeader('Authorization', "Token " + token);
+    positionRequest.setRequestHeader('Authorization', "Bearer " + token);
     positionRequest.setRequestHeader('Accept', "application/json");
     positionRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=utf-8');
 
@@ -4122,10 +4123,10 @@
           var positions = JSON.parse(positionRequest.responseText)['results'];
 
           if(positions.length == 0 ){
-            $('.avg-buy-price').html(0);
-            $('.shares').html(0);
-            $('.buys').html(0);
-            $('.sells').html(0);
+            $('.avg-buy-price[data-id]').html(0);
+            $('.shares[data-id]').html(0);
+            $('.buys[data-id]').html(0);
+            $('.sells[data-id]').html(0);
           }
 
           getOrders(function(orders) {
@@ -4259,7 +4260,7 @@
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
     xhr.setRequestHeader('Accept', 'application/json');
-    xhr.setRequestHeader('Authorization', "Token " + token);
+    xhr.setRequestHeader('Authorization', "Bearer " + token);
 
     xhr.onload = function(e) {
       if (xhr.readyState === 4) {
@@ -4315,7 +4316,7 @@
 
     var orderRequest = new XMLHttpRequest();
     orderRequest.open("POST", cancelURL + "cancel/", true);
-    orderRequest.setRequestHeader('Authorization', "Token " + token);
+    orderRequest.setRequestHeader('Authorization', "Bearer " + token);
     orderRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=utf-8');
     //                  orderRequest.setRequestHeader('Access-Control-Allow-Origin', 'https://api.robinhood.com');
 
