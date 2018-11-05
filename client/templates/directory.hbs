@@ -1,37 +1,6 @@
-<div class="file-header">
-  <span class="basicStockInfo" >
-    <span class="file-link entry-link" data-toggle="popover" title="Popover Header" data-content="Some content inside the popover" >Symbol</span>
 
-    <span class="avg-buy-price">Avg. Price</span>
-    <span class="shares" ># Owned</span>
-    <span class="buys" >Orders</span>
-    <span class="sells" >For Sale</span>
-  </span>
-  <span class="mtime" data-timestamp="{{mtime}}">
-   
-  
-  
-    Price
-  </span>
-  <span class="quantity">
-    Quantity
-    <span class="fractions">
-     
-    </span>
-    
-    
-    
-   
-
-
-  </span>
-  
-
-  <span class="orders" > </span>
-  
-</div>
 {{#each entries}}
-  {{#is type "f"}}
+ 
     <div class="data-row {{classes}}" data-type="file" data-id="{{id}}" data-instrument="{{instrument}}" data-name="{{sortname}}">
 
       <span class="sprite sprite-{{sprite}}">
@@ -46,7 +15,16 @@
       
       
       <span class="basicStockInfo" >
-        <span class="file-link entry-link" data-toggle="popover" title="Popover Header" data-content="Some content inside the popover" >{{name}}</span>
+        <span class="file-link entry-link" data-toggle="popover" title="Popover Header" data-content="Some content inside the popover" >
+        {{#if input}}
+          hi
+        
+        {{else}}
+          {{name}}
+
+        {{/if}}
+        
+        </span>
 
         <span class="avg-buy-price" data-id={{avg_buy_price}}>{{avg_buy_price}}</span>
         <span class="shares" data-id={{shares}}>{{shares}}</span>
@@ -67,10 +45,10 @@
         -->
       
       
-        <input class="price" type="text" placeholder="" >
+        <input class="price" type="number" placeholder="" >
       </span>
       <span class="quantity">
-        <input class="quantity-input" type="text" placeholder="">
+        <input class="quantity-input" type="number" placeholder="">
         <span class="fractions">
           <a href="" class="quantity-button third"><span><sup>1</sup>&frasl;<sub>3</sub></span></a>
           <a href="" class="quantity-button half"><span><sup>1</sup>&frasl;<sub>2</sub></span></a>
@@ -94,27 +72,7 @@
       <span class="orders" > </span>
 
     </div>
-  {{/is}}
-  {{#is type "d"}}
-    <div class="data-row {{classes}}" data-type="folder" data-id="{{id}}" data-name="{{sortname}}">
-      <span class="sprite sprite-folder"></span>
-      <a class="folder-link entry-link">{{name}}</a>
-      <span class="mtime" data-timestamp="{{mtime}}"></span>
-      <span class="size" data-size="{{size}}">{{psize}}</span>
-      <span class="line-buttons">
-        <span class="share-file tip tip-n" aria-label="Share">{{{svg "link"}}}</span>
-        <a class="zip tip tip-n" href="!/zip{{id}}" download="{{name}}" aria-label="Download zip">{{{svg "download"}}}</a>
-        <span class="entry-menu tip tip-nw" aria-label="Actions">{{{svg "menu"}}}</span>
-      </span>
-    </div>
-  {{/is}}
-  {{#is type "e"}}
-    <div class="data-row {{classes}}" data-type="error" data-id="{{id}}" data-name="{{sortname}}">
-      <span class="{{sprite}}"></span>
-      <a class="error-link entry-link">{{name}}</a>
-    </div>
-  {{/is}}
-{{else}}
-  <div id="empty" class="empty">{{{svg "upload-cloud"}}}<div class="text">Add files</div></div>
+
+  
 {{/each}}
 

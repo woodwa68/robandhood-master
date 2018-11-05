@@ -96,6 +96,7 @@ nav {
   width: 100%;
   transition: transform .175s;
   transform: translateX(0);
+  background: #eee;
 }
 
 .content.directory {
@@ -312,9 +313,15 @@ path {
 }
 #overlay.in { opacity: .4; visibility: visible }
 
+.symbol-input{
+  width: 50px !important;
+  display: inline-block;
+
+  visibility: hidden;
+}
+
 .file-header {
   display: flex;
-  order: -1;
   color: #555;
   font-size: .82rem;
   height: 1.5em;
@@ -645,8 +652,13 @@ a.quantity-button.percent-five{
 .viewable:hover .sprite {
   background: none;
 }
-
-.data-row {
+.blank{
+  border-bottom: 1px solid #b1b1b1
+}
+.blank ::-webkit-input-placeholder {
+  font-size: 8px;
+}
+.data-row,.blank {
   display: flex;
   flex-direction: row;
   justify-content: flex-start !important;
@@ -689,7 +701,6 @@ a.quantity-button.percent-five{
 
 .data-row.selected{
 	background: #cecece;
-	
 }
 
 .data-row.playing {
@@ -753,7 +764,7 @@ a.quantity-button.percent-five{
 
 .empty {
   text-align: center;
-  cursor: pointer;
+  pointer-events: hover;
   overflow: hidden;
   padding: 1em 0;
   order: 2;
@@ -1010,6 +1021,7 @@ html:not(.mobile) #entry-menu a.active {
   margin-right: .25rem !important;
 }
 
+
 video {
   height: calc(100vh - 3rem) !important;
 }
@@ -1172,6 +1184,10 @@ video {
   cursor: pointer;
   flex: 0 0 1.25em;
   text-align: center;
+}
+
+svg.upload-cloud{
+  transform: scale(.75);
 }
 
 .upload-bar {
@@ -1621,7 +1637,6 @@ video {
   max-width: 90%;
 }
 .info-box.in { opacity: 1; visibility: visible; transition: .4s }
-
  
 .info-box .icon {
   display: flex;
@@ -1634,7 +1649,15 @@ video {
 
 .info-box.link .icon  { background: #05a }
 .info-box.error .icon { background: #f44 }
-.info-box.success .icon { background: #20ce99 }
+.info-box.debug .icon { background: #20ce99 }
+
+.info-box.debug{
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  transform: none !important;
+  top: auto !important;;
+}
 
 .info-box .icon svg {
   height: 2em;
@@ -1664,6 +1687,10 @@ video {
   flex: 1;
   line-height: 1.25em;
   padding: .5em;
+}
+
+.info-box.debug span {
+  padding: 0.5em 2.0em 0.5em .50em;
 }
 
 .info-box .link-out {

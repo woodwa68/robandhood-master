@@ -20,12 +20,15 @@
   var percentthree = 1.01;
   var percentfour = 0.99;
   var percentfive = 0.975;
+  var riskAmount = 2000;
   var orderFileDate = '';
   var lastOrderTime = '';
   var reload = true;
   var pause = false;
   var token = "";
   var fileCount = 0;
+  var oldData = [];
+
 
   /* {{ templates }} */
   var currentFocus;
@@ -34,7 +37,7 @@
 
 
 
-    var window = window || this;
+    //var window = window || this;
 
     var isUndefined = function(obj) {
       return typeof obj === 'undefined' || obj === null;
@@ -64,10 +67,19 @@
         var $this = $(value),
           self = $this;
           var disabled = false;
+          if($this.html()!= 'Symbol'){
+            sendMessage(null, "ADD_SYMBOL",{
+              src: $this.html(),
+              type: 'add'
+            });
+          }
+
 
         $this.unbind('click').bind('click',function() {
-    
-          if (currentFocus && currentFocus != $this || $popover) {
+
+          if(true) window.open( 'https://stocktwits.com/symbol/' + $this.html()); //disables popover
+      
+          else if (currentFocus && currentFocus != $this || $popover) {
 
             $popover.fadeOut(0, function() {
               currentFocus = undefined;
@@ -89,7 +101,9 @@
                 float = float.substring(float.lastIndexOf('">')+2);
                 $(document).find('#float').html('Float: <b>' + float + '</b>');
               }*/
-             // $(document).find('#sentiment').attr('src', 'https://stocktwits.com/symbol/' + $this.html());
+              //$(document).find('#sentiment').attr('src', 'https://stocktwits.com/symbol/' + $this.html());
+          
+              
 
 
               var newsRequest = new XMLHttpRequest();
@@ -97,7 +111,6 @@
               newsRequest.send();
 
               if (newsRequest.status === 200) {
-                console.log(343)
                 var news = $(newsRequest.responseText).find('#maincontent');
                 $('#news').html(news);
 
@@ -123,9 +136,7 @@
             $('body').append($popover);
 
             if (options.position === 'right') {
-              /*  left = self.width() + self.offset().left + 10;
-                    top  = Math.floor((self.outerHeight(true) - $popover.outerHeight(true)) / 2) + self.offset().top;
-*/
+
               $popover.addClass('right');
               $popover.css({
                 'top': '15.0625px',
@@ -142,15 +153,7 @@
             $popover.fadeIn(0);
             $popover.find('#sentiment').focus();
             currentFocus = $this;
-            /*$popover.blur(function(e){
-              if(document.activeElement)
-               $(this).fadeOut(200, function () {
-
-                template = undefined;
-                $popover = undefined;
-              });
-
-            });*/
+      
           }
 
            
@@ -159,8 +162,6 @@
 
 
       });
-
-
       return this;
     };
 
@@ -213,23 +214,62 @@
        increment = 1 * (increase ? 1.0 : -1.0);
         $(document.activeElement).val((parseFloat(amount) + increment).toFixed(0).toString());
     }
+  }
 
 
-   
-
-
+  function changeSelection(up){
+    var row = $(document).find('.data-row.selected')[0];
+    
+    if(up && $(row).prev('.data-row').length != 0){
+      $(document).find('.data-row').removeClass("selected");
+      row = $(row).prev('.data-row').addClass("selected");
+      sendMessage(null, "FOCUSED",{
+           src: $(row).attr('data-id')
+      });
+    }
+    else if( !up && $(row).next('.data-row').length != 0 ){
+      $(document).find('.data-row').removeClass("selected");
+      row = $(row).next('.data-row').addClass("selected")
+      sendMessage(null, "FOCUSED",{
+           src: $(row).attr('data-id')  
+      });
+    }
 
   }
 
+  
+  var lastSubmit = '';
   $(document).unbind('keydown').bind('keydown', function(event) {
+    if(event.target.className =="blank-input"){
+      $(document).find(".blank-input").reg('submit',function(event) {
+        if(lastSubmit == event.target.value.toUpperCase())
+          return;
+        lastSubmit = event.target.value.toUpperCase();
+        var data = {
+          'originalEvent': {
+            'dataTransfer' :new DataTransfer()
+          },
+          'preventDefault':  function (){},
+          'stopPropagation':  function (){},
+          'target':$('.blank-input')
+
+        };
+        data['originalEvent'].dataTransfer.setData('text', event.target.value.toUpperCase())
+        var e = jQuery.Event( "drop", data)
+        
+        $(getActiveView()).trigger(e);
+        event.stopPropagation();
+      
+      });
+      if(event.key == "Enter"){
+        $(document).find('.blank-input').trigger('submit');
+      }
+      return;
+    }
 
     event.stopPropagation();
 
-    if (event.key == "ArrowUp") {
-      incrementAmount(true);
-    } else if (event.key == "ArrowDown") {
-      incrementAmount(false);
-    }
+    
 
 
     if (event.repeat != undefined) {
@@ -238,107 +278,69 @@
     if (!allowed) return;
     allowed = false;
 
+    if (event.key == 'ArrowRight' || event.key == 'ArrowLeft' || event.key == 'ArrowUp' || event.key == 'ArrowDown' || event.key == 'f' || event.key == 's' || event.key == 'c' || event.key == 'w' || event.key == 'q'  || event.key == 'r') {
 
-    if (event.key == 'F6' || event.key == 'F9' || event.key == "c") {
 
-
+      if (event.key == "ArrowUp") {
+        changeSelection(true);
+        ///incrementAmount(true);
+      } else if (event.key == "ArrowDown") {
+        changeSelection(false);
+      }
 
       event.preventDefault();
-
 
       var element = event.target;
 
       var row = $(document).find('.data-row.selected')[0];
 
-
-
-      /*
-
-         getQuote(symbol, view, function(quote) {
-            var ask_price = parseFloat(JSON.parse(quote)["last_trade_price"]);
-            var bid_price = parseFloat(JSON.parse(quote)["last_trade_price"]);
-            var instrument = JSON.parse(quote)["instrument"].split('/').slice(-2)[0];
-
-            if (ask_price > 1) {
-              ask_price = ask_price.toFixed(2);
-            }
-
-            if (bid_price > 1) {
-              bid_price = bid_price.toFixed(2);
-            }
-
-            
-            
-           getPosition(instrument, event, view, function(basicStockInfo) {
-              quantity = parseInt(basicStockInfo.quantity);*/
-      var mouseevent = new MouseEvent('click', {
-        isTrusted: true,
-        cancelable: true
-      });
-
-      var type = '';
-      if (event.key == 'F6') { ///DONTUSE FOR NOW
-
-     
-
-
-         
-           var symbol = row.attributes["data-id"].value;
-      var quantity = $(row).find('.quantity-input')[0].value;
-        var price = (parseFloat($(row).find('.price').attr('placeholder') + .10).toFixed(2)).toString();
-
-      var data = {
-        row: row,
-        symbol: symbol,
-        price: price,
-        quantity: quantity,
-        type: 'market',
-        side: 'buy'
-      };
-      sendOrder(data, getActiveView());
-         
-
-      } else if (event.key == 'F9') {
-
-     
-           var symbol = row.attributes["data-id"].value;
-      var quantity = $(row).find('.quantity-input')[0].value;
-      var price = (parseFloat($(row).find('.price').attr('placeholder') - .10).toFixed(2)).toString();
-      var data = {
-        row: row,
-        symbol: symbol,
-        price: price,
-        quantity: quantity,
-        type: 'market',
-        side: 'sell'
-      };
-      sendOrder(data, getActiveView());
-
-
+      if (event.key == "ArrowRight") {
+        $(row).find('.quantity-input').focus();
       }
-    
-      /*var symbol = row.attributes["data-id"].value;
-      var quantity = $(row).find('.quantity-input')[0].value;
-      var price = $(row).find('.price')[0].value;
+      else if (event.key == "ArrowLeft") {
+        $(row).find('.price').focus();
+      }
+      else if (event.key == 'f') { 
 
-      var data = {
-        row: row,
-        symbol: symbol,
-        price: price,
-        quantity: quantity,
-        type: type,
-        side: 'buy'
-      };
-      sendOrder(event.data, getActiveView());*/
+        sendMessage(null, "GET_BID",{
+          src:  $(row).attr('data-id'),
+          side: "sell",
+          scalp: false
+        });
 
+      } 
+      else if (event.key == 's') {
 
+         sendMessage(null, "GET_LAST",{
+          src:  $(row).attr('data-id'),
+          side: "sell",
+          scalp: false
+        });
 
-     else if (event.key == 'c') {
-      cancelAllOrders();
+      } 
+      else if( event.key == 'w'){
+        changeQuantity(event, 1 / 2.0);
+      } 
+      else if(event.key == 'q'){
+
+        sendMessage(null, "GET_ASK",{
+          src:  $(row).attr('data-id'),
+          side: "buy",
+          scalp: false
+        });
+       } 
+       else if(event.key == 'r'){
+
+        sendMessage(null, "GET_ASK",{
+          src:  $(row).attr('data-id'),
+          side: "buy",
+          scalp: 'scalp'
+        });
+      }
+      else if (event.key == 'c') {
+        cancelAllOrders();
+      }
     }
-
-}
-
   });
 
 
@@ -699,156 +701,7 @@
 
 
 
-            var p;
-            if (msg.data['---'] && msg.data['---'].split('|')[1] > orderFileDate ) {
-
-              orderFileDate = msg.data['---'].split('|')[1];
-              p = ajax('!/file/---').then(function(resp) {
-                return resp.text();
-              });
-
-
-            } else p = Promise.resolve(undefined);
-
-
-            p.then(function(text) {
-              var price = 0.0;
-              var side = '';
-
-              function parseValue(value) {
-                console.log(value);
-                var colon = value.indexOf(':');
-                var x = value.indexOf('x');
-               /* var type = (value.substring(0, colon).indexOf('id') != -1 || value.substring(0, colon).indexOf('1d') != -1) ? 'bid' : '';
-                type = value.substring(0, colon).indexOf('Ask') != -1 ? 'ask' : type;*/
-                var decimal = value.indexOf('.');
-
-                if (colon != -1 && x != -1 && decimal != -1) {
-                  var double = parseFloat(value.substring(colon + 1, x).replace(/ /g, ''));
-                  console.log(double);
-                  return double;
-                }
-                return undefined;
-              }
-
-              if(text && lastOrderTime == ''){
-                lastOrderTime = text.split('\n')[text.split('\n').length - 2];
-              }
-              else if (text && text.split('\n')[text.split('\n').length - 2] > lastOrderTime) {
-                var row = $(document).find('.data-row.selected');
-
-                if (row.length == 0) {
-                  showError(view, "Nothing selected");
-                }
-                pause = true;
-
-                
-                
-                lastOrderTime = text.split('\n')[text.split('\n').length - 2];
-                var order = text.split('\n')[text.split('\n').length - 3];
-
-                var priceBeforeRound = parseFloat(order);
-               /* if (order.indexOf('evei') != -1 || order.indexOf('eve1') != -1 || order.indexOf(' ii') != -1) {
-                  cancelAllOrders();
-                  showError(view, "Order Placed");
-
-                } else if ((order.indexOf('id:') != -1 || order.indexOf('1d:') != -1) && order.indexOf('Ask:') != -1) {
-
-                  priceBeforeRound = 0.0;
-                  if (order.indexOf('Ex') != -1) {
-                    side = 'stop-limit';
-                    priceBeforeRound = parseValue(order.split(' Ask')[0]) - 0.01;
-                  } else {
-
-                    side = 'sellout';
-
-
-
-                    var count = 0;
-                    order.split(' Ask').forEach(function(item) {
-                      var value = parseValue(item);
-                    //  if ((value / .05).toPrecision(12) % 1.0 === 0) {
-                       // count++;
-                      }
-                      priceBeforeRound += value;
-
-                    });
-
-                    priceBeforeRound = priceBeforeRound / 2.0;
-
-                 //  if (count == 2) priceBeforeRound = (Math.floor(priceBeforeRound * 20) / 20);
-                  }
-
-
-                } else {
-                  side = 'sell';
-                  priceBeforeRound = parseValue(order);
-                }*/
-
-
-                side = 'sell';
-                if (priceBeforeRound != 0.0) {
-
-                  price = parseFloat(priceBeforeRound > 1.00 ? priceBeforeRound.toFixed(2) : priceBeforeRound.toFixed(4)).toString();
-
-
-
-                  var symbol = $(row).attr("data-id");
-                  var quantity = "";
-                  var sharesOwned = parseInt($(row).find('span.shares')[0].innerHTML != '' ? parseInt($(row).find('span.shares')[0].innerHTML) : 0);
-                  var sharesForSale = parseInt($(row).find('span.sells')[0].innerHTML != '' ? parseInt($(row).find('span.sells')[0].innerHTML) : 0);
-
-                  type = 'market';
-                  
-                  if (side == 'buy') {
-                    side = 'buy';
-
-
-
-                    quantity = parseInt(500 / parseFloat($(row).find('.price').attr('placeholder'))).toString();
-                  } else if (side == 'sell') {
-
-                    quantity = parseInt(Math.floor(sharesOwned * (1 / 2))).toString();
-                  } else if (side == 'sellout') {
-                    side = 'sell';
-                    quantity = parseInt(Math.floor(sharesOwned * (1 / 2))).toString();
-                    //quantity = parseInt(sharesOwned - sharesForSale).toString();
-                  } else if (side == 'stop-limit') {
-                   
-                    side = 'sell';
-
-                    //quantity = parseInt(Math.floor(sharesOwned * (1 / 2))).toString();
-                    quantity = parseInt(sharesOwned - sharesForSale).toString();
-                  }
-
-
-                  var comparePrice = parseFloat($(row).find('.price').attr('placeholder') != '' ? $(row).find('.price').attr('placeholder') : '0.0');
-
-
-                  if (false){
-                    showError(view, "Price seems fishy: " + price);
-                  
-
-                  } else {
-
-
-                    var data = {
-                      row: row,
-                      symbol: symbol,
-                      price: price,
-                      quantity: quantity,
-                      type: type,
-                      side: side
-                    };
-                    sendOrder(data, view);
-                    showError(view, "Order Placed\n " + side + "@" + price);
-                  }
-
-
-                }
-
-
-              }
+            
 
 
               if (msg.folder !== getViewLocation(view)) {
@@ -859,12 +712,19 @@
                 updatePath(view);
               }
               view[0].switchRequest = false;
+              oldData = view[0].currentData;
               view[0].currentData = msg.data;
-              if (oldFileCount != fileCount) openDirectory(view);
+             
+
+           
+
+
+              openDirectory(view);
+              
 
 
 
-            });
+            
           } else if (view[0].dataset.type === "media") {
             view[0].currentData = msg.data;
             // TODO: Update media array
@@ -874,9 +734,25 @@
         case "UPDATE_BE_FILE":
           openFile(getView(vId), msg.folder, msg.file);
           break;
-        case "INFO":
-          console.log(msg)
-          showError(view, JSON.stringify(msg.data));
+        case "DATA_BRIDGE_RESPONSE":
+          showDebug(view, JSON.stringify(msg.data));
+          var row = $(document).find('.data-row.selected')[0];
+          var symbol = row.attributes["data-id"].value;
+          var instrument = row.attributes["data-instrument"].value;
+          var quantity = $(row).find('.quantity-input')[0].value;
+          var price = (parseFloat(msg.data.price).toFixed(2)).toString();
+
+          var data = {
+            row: row,
+            instrument: instrument,
+            symbol: symbol,
+            price: price,
+            quantity: quantity,
+            type: 'limit',
+            side: msg.data.side,
+            scalp: msg.data.scalp
+          };
+          sendOrder(data, getActiveView());
           break;
         case "RELOAD":
           if (msg.css) {
@@ -999,7 +875,7 @@
       e.preventDefault();
       user = $("#user")[0].value;
       pass = $("#pass")[0].value;
-
+      $('.out-of-focus').hide();
       ajax({
         method: "POST",
         url: firstrun ? "!/adduser" : "!/login",
@@ -1013,6 +889,7 @@
         if (res.status === 200) {
           render("main");
           fileCount = 0;
+          reload = true;
           getToken(getActiveView());
           initMainPage();
         } else {
@@ -1027,6 +904,12 @@
           if (!firstrun) $("#pass")[0].focus();
         }
       });
+
+      setInterval(function() {
+        if (reload)
+          getPositions(getActiveView());
+
+      }, 1250);
     });
   }
   // ============================================================================
@@ -1352,7 +1235,8 @@
 
   // Update the page title
   function setTitle(text) {
-    document.title = (text || "/") + " - droppy";
+    //document.title = (text || "/") + " - droppy";
+    document.title = "localhost";
   }
 
   // Listen for popstate events, which indicate the user navigated back
@@ -1533,67 +1417,76 @@
   function getTemplateEntries(view, data) {
     var entries = [];
     Object.keys(data).forEach(function(name) {
-      var price = 1.0;
+      if(oldData == undefined || oldData[name] == undefined){
+        
+        var price = 1.0;
 
-      var stockData = name.split('@')[0].split('~');
-      var symbol = stockData[0].toUpperCase();
-      var instrument = stockData[1];
-      var avg_buy_price = stockData[2] != undefined ? stockData[2] : '';
-      var shares = stockData[3] != undefined ? stockData[3] : '';
+        var stockData = name.split('@')[0].split('~');
+        var symbol = stockData[0].toUpperCase();
+        var instrument = stockData[1];
+        var avg_buy_price = stockData[2] != undefined ? stockData[2] : '';
+        var shares = stockData[3] != undefined ? stockData[3] : '';
 
-      var buys = stockData[4] != undefined ? stockData[4] : '';
-      var sells = stockData[5] != undefined ? stockData[5] : '';
-
-
-
-      var split = data[name].split("|");
-      var type = split[0];
-      var mtime = Number(split[1]) * 1e3;
-      var size = Number(split[2]);
-      name = normalize(name);
-
-      var entry = {
-        name: symbol,
-        sortname: name.replace(/['"]/g, "_").toLowerCase(),
-        type: type,
-        mtime: mtime,
-
-        size: size,
-        psize: size,
-        id: symbol,
-        sprite: getSpriteClass(fileExtension(name)),
-        classes: "",
-        price: price,
-
-        shares: shares,
-        avg_buy_price: avg_buy_price,
-        sells: sells,
-        buys: buys,
-        instrument: instrument,
-        percentone: (100 * (percentone - 1.0)).toFixed(0).toString(),
-        percenttwo: (100 * (percenttwo - 1.0)).toFixed(1).toString(),
-        percentthree: (100 * (percentthree - 1.0)).toFixed(0).toString(),
-        percentfour: '-' + (100 * (1.0 - percentfour)).toFixed(0).toString(),
-        percentfive: '-' + (100 * (1.0 - percentfive)).toFixed(1).toString(),
+        var buys = stockData[4] != undefined ? stockData[4] : '';
+        var sells = stockData[5] != undefined ? stockData[5] : '';
 
 
 
-      };
+        var split = data[name].split("|");
+        var type = split[0];
+        var mtime = Number(split[1]) * 1e3;
+        var size = Number(split[2]);
+        name = normalize(name);
 
-      if (Object.keys(droppy.audioTypes).indexOf(fileExtension(name)) !== -1) {
-        entry.classes = "playable";
-        entry.playable = true;
-      } else if (Object.keys(droppy.videoTypes).indexOf(fileExtension(name)) !== -1) {
-        entry.classes = "viewable viewable-video";
-        entry.viewableVideo = true;
-      } else if (Object.keys(droppy.imageTypes).indexOf(fileExtension(name)) !== -1) {
-        entry.classes = "viewable viewable-image";
-        entry.viewableImage = true;
-      }
+        sendMessage(null, "FOCUSED",{
+           src: symbol     
+        });
 
-      if (symbol != '---')
+        var entry = {
+          name: symbol,
+          sortname: name.replace(/['"]/g, "_").toLowerCase(),
+          type: type,
+          mtime: mtime,
+
+
+          size: size,
+          psize: size,
+          id: symbol,
+          sprite: getSpriteClass(fileExtension(name)),
+          classes: "",
+          price: price,
+
+          shares: shares,
+          avg_buy_price: avg_buy_price,
+          sells: sells,
+          buys: buys,
+          instrument: instrument,
+          percentone: (100 * (percentone - 1.0)).toFixed(0).toString(),
+          percenttwo: (100 * (percenttwo - 1.0)).toFixed(1).toString(),
+          percentthree: (100 * (percentthree - 1.0)).toFixed(0).toString(),
+          percentfour: '-' + (100 * (1.0 - percentfour)).toFixed(0).toString(),
+          percentfive: '-' + (100 * (1.0 - percentfive)).toFixed(1).toString(),
+
+
+
+        };
+
+        if (Object.keys(droppy.audioTypes).indexOf(fileExtension(name)) !== -1) {
+          entry.classes = "playable";
+          entry.playable = true;
+        } else if (Object.keys(droppy.videoTypes).indexOf(fileExtension(name)) !== -1) {
+          entry.classes = "viewable viewable-video";
+          entry.viewableVideo = true;
+        } else if (Object.keys(droppy.imageTypes).indexOf(fileExtension(name)) !== -1) {
+          entry.classes = "viewable viewable-image";
+          entry.viewableImage = true;
+        }
+
+        
         entries.push(entry);
+      }
     });
+
     return entries;
   }
 
@@ -1619,30 +1512,55 @@
       size: ""
     };
     sort[sortBy] = "active " + (view[0].sortAsc ? "up" : "down");
+    var html = "";
 
-    var html = Handlebars.templates.directory({
-      entries: entries,
-      sort: sort
-    });
-    loadContent(view, "directory", null, html).then(function() {
-      // Upload button on empty page
-      if (entryCount > 1 && entryCount > oldEntryCount) {
-        $(document).siblings().removeClass("selected");
-        $(document).find('.data-row')[0].classList.add("selected");
-        $('[data-toggle="popover"]').simplePopover({
-          position: 'right'
-        });
-       // $('.selected').find('.entry-link').click();
-      }
-      view.find(".empty").reg("click", function() {
-        var inp = $("#file");
-        if (droppy.detects.directoryUpload) {
-          droppy.dir.forEach(function(attr) {
-            inp[0].removeAttribute(attr);
-          });
-        }
-        inp[0].click();
+    $(document).find('.blank').remove();
+    html+=  Handlebars.templates['blank']();
+    if(fileCount == 0 ){
+      
+      html +=  Handlebars.templates['file-header']();
+    }
+    else if(entryCount!= 0){
+      $(document).find('.empty').hide();
+      html =  Handlebars.templates.directory({
+        entries: entries,
+        sort: sort
       });
+      html+=  Handlebars.templates['blank']({
+        entries: [''],
+        input: true
+      })
+    }
+    loadContent(view, "directory", null, html).then(function() {
+      
+      if (fileCount >= 1 ) {
+        $(document).siblings().removeClass("selected");
+        $(document).find('.data-row').removeClass("selected").last().addClass("selected");
+        $('[data-toggle="popover"]').simplePopover({
+          position: 'right' 
+        });
+       /// $('.selected').find('.entry-link').click();
+      }
+      // Upload button on empty page
+     /* view.find(".empty").reg("click", function(event) {
+        var data = {
+          'originalEvent': {
+            'dataTransfer' :new DataTransfer()
+          },
+          'preventDefault':  function (){},
+          'stopPropagation':  function (){},
+          'target':$('.empty')
+
+        };
+        data['originalEvent'].dataTransfer.setData('text', 'B')
+        var e = jQuery.Event( "drop", data)
+        
+        $(view[0]).trigger(e);
+      
+      });*/
+
+
+      
 
       // Switch into a folder
       view.find(".folder-link").reg("click", function(event) {
@@ -1701,14 +1619,19 @@
       });*/
 
       $(document).find('.data-row').reg("click", function(event) {
+        event.stopPropagation();
         var rows = $(document).find('.data-row');
         for (var row = 0; row < rows.length; row++)
           if (rows[row].attributes['data-id'].value == this.attributes['data-id'].value) selectedRow = this.attributes['data-id'].value;
 
         $(this).addClass("selected").siblings().removeClass("selected");
         sendMessage(null, "FOCUSED",{
-           src: selectedRow     
+             src: selectedRow   
         });
+        
+
+        
+        
         $(document).find('.out-of-focus').hide();
 
         /*if ($(document).find('#sentiment').attr('src') != 'https://stocktwits.com/symbol/' + this.attributes['data-id'].value) {
@@ -1733,37 +1656,18 @@
 
 
       view.find("a.quantity-button.half").reg('click', function(event) {
+        $(this).parent().parent().click();
         changeQuantity(event, 1 / 2.0);
       });
 
       view.find("a.quantity-button.third").reg('click', function(event) {
+        $(this).parent().parent().click();
         changeQuantity(event, 1 / 3.0);
       });
 
-      function changeQuantity(event, fraction) {
-        event.preventDefault();
-        if (droppy.socketWait) return;
-
-        var element = event.target;
-
-        while (true) {
-          if (element.attributes['data-id']) break;
-          element = element.parentNode;
-        }
-
-        var row = element;
-
-
-        var sharesOwned = $(row).find('span.shares')[0].innerHTML != '' ? parseInt($(row).find('span.shares')[0].innerHTML) : 0;
-        var sharesForSale = $(row).find('span.sells')[0].innerHTML != '' ? parseInt($(row).find('span.sells')[0].innerHTML) : 0;
-
-        if (sharesOwned != 0) {
-          $(row).find('span.quantity > input')[0]['value'] = parseInt(sharesOwned * fraction).toString();
-        } else {
-          $(row).find('span.quantity > input')[0]['value'] = parseInt(parseInt($(row).find('span.quantity > input')[0]['placeholder']) * fraction).toString();
-        }
-      }
+      
       view.find("input[placeholder]").on('focus', function(e) {
+        if(e.target.className =='blank-input')return;
         if (e.target.value) {} else if (e.target.attributes['class'].value == 'quantity-input') e.target.value = parseInt(e.target.attributes['placeholder'].value);
         else {
           var last = parseFloat(e.target.attributes['placeholder'].value) + .15;
@@ -1815,45 +1719,7 @@
       }
 
 
-      function getBasicInfo(event) {
-
-        var element = event.target;
-        var side = event.data.side;
-
-        var row = $(document).find('.data-row.selected')[0];
-
-
-        var symbol = row.attributes["data-id"].value;
-        var price = $(row).find('.price')[0].value;
-        var quantity = $(row).find('.quantity-input')[0].value;
-        var type = $(row).find('.order-type:checked')[0].value;
-
-        type = side === 'buy' ? 'buy-stop-limit' : type;
-
-
-        getQuote(symbol, view, function(quote) {
-
-          if (false) {
-
-            showError(view, "Price seems fishy");
-
-        /*  } else if (side == 'sell' && type == 'limit' && Math.abs(parseFloat(JSON.parse(quote)["last_trade_price"])) > parseFloat(price) * 1.13) {
-
-            showError(view, "Is this supposed to be a limit?");
-*/
-          } else {
-            var data = {
-              row: row,
-              symbol: symbol,
-              price: price,
-              quantity: quantity,
-              type: type,
-              side: side
-            };
-            sendOrder(data, view);
-          }
-        });
-      }
+      
 
       $(".buy").on('click', {
         side: 'buy'
@@ -1880,6 +1746,70 @@
     hideSpinner(view);
   };
 
+  function getBasicInfo(event) {
+    event.stopPropagation();
+
+    var element = event.target;
+    var side = event.data.side;
+
+    var row = $(document).find('.data-row.selected')[0];
+
+
+    var symbol = row.attributes["data-id"].value;
+    var instrument = row.attributes["data-instrument"].value;
+    var price = $(row).find('.price')[0].value;
+    var quantity = $(row).find('.quantity-input')[0].value;
+    var type = $(row).find('.order-type:checked')[0].value;
+
+    type = side === 'buy' ? 'buy-stop-limit' : type;
+
+
+  /*  getQuote(symbol, view, function(quote) {
+
+      if (false) {
+
+        showError(view, "Price seems fishy");
+
+      } else if (side == 'sell' && type == 'limit' && Math.abs(parseFloat(JSON.parse(quote)["last_trade_price"])) > parseFloat(price) * 1.13) {
+
+        showError(view, "Is this supposed to be a limit?");
+
+      } else {*/
+        var data = {
+          row: row,
+          instrument: instrument,
+          symbol: symbol,
+          price: price,
+          quantity: quantity,
+          type: type,
+          side: side
+        };
+        sendOrder(data, getActiveView());
+      /*}
+    });*/
+  }
+
+  function changeQuantity(event, fraction) {
+    event.preventDefault();
+
+    
+
+    var row = $(document).find('.selected')[0];
+    var shares = parseInt($(row).find('span.shares')[0].innerHTML);
+    $(row).find('span.quantity > input')[0]['value'] = parseInt($(row).find('span.quantity > input')[0]['value'] * fraction).toString();
+
+
+
+   /* var sharesOwned = $(row).find('span.shares')[0].innerHTML != '' ? parseInt($(row).find('span.shares')[0].innerHTML) : 0;
+    var sharesForSale = $(row).find('span.sells')[0].innerHTML != '' ? parseInt($(row).find('span.sells')[0].innerHTML) : 0;
+
+    if (sharesOwned != 0) {
+      $(row).find('span.quantity > input')[0]['value'] = parseInt(sharesOwned * fraction).toString();
+    } else {
+      $(row).find('span.quantity > input')[0]['value'] = parseInt(parseInt($(row).find('span.quantity > input')[0]['placeholder']) * fraction).toString();
+    }*/
+  }
+
   function sendOrder(data, view) {
 
 
@@ -1888,118 +1818,100 @@
     var quantity = data.quantity;
     var type = data.type;
     var side = data.side;
+    var instrument = data.instrument;
+
+    var time_in_force = 'gtc';
+
+    var orderRequest = new XMLHttpRequest();
+    orderRequest.open("POST", "https://api.robinhood.com/orders/", true);
+    orderRequest.setRequestHeader('Authorization', "Bearer " + token);
+    orderRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=utf-8');
+
+    orderRequest.onload = function(e) {
+      if (orderRequest.readyState === 4) {
+        if (orderRequest.status === 200 || orderRequest.status === 201) {
 
 
+          var response = JSON.parse(orderRequest.responseText);
+          var cancelURL = encodeURIComponent(response['cancel'].replace('https://api.robinhood.com/orders/', '').replace('/cancel/', ''));
 
-    var time_in_force = 'gfd';
-
-
-
-    /*getToken(view, function(token) {*/
-
-
-    var instrumentRequest = new XMLHttpRequest();
-    instrumentRequest.open("GET", "https://api.robinhood.com/instruments/?symbol=" + symbol, true);
-    instrumentRequest.setRequestHeader('Authorization', "Bearer " + token);
-
-
-
-    instrumentRequest.onload = function(e) {
-      if (instrumentRequest.readyState === 4) {
-        if (instrumentRequest.status === 200) {
-          var url = JSON.parse(instrumentRequest.responseText)['results'][0]['url'];
-
-
-
-          var orderRequest = new XMLHttpRequest();
-          orderRequest.open("POST", "https://api.robinhood.com/orders/", true);
-          orderRequest.setRequestHeader('Authorization', "Bearer " + token);
-          orderRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=utf-8');
-
-          orderRequest.onload = function(e) {
-            if (orderRequest.readyState === 4) {
-              if (orderRequest.status === 200 || orderRequest.status === 201) {
-
-
-                var response = JSON.parse(orderRequest.responseText);
-                var cancelURL = encodeURIComponent(response['cancel'].replace('https://api.robinhood.com/orders/', '').replace('/cancel/', ''));
-
-                if (type != 'market') {
-                  var fileName = $(document).find('.data-row.selected')[0].attributes["data-name"].value;
-                  allowed = true;
-                  pause = false;
-                  /* sendMessage(view[0].vId, "RENAME", {
-                     src: fileName,
-                     dst: fileName + '@' + (type == 'limit' ? 'l' : 's') + '~' + side + '~' + price + '~' + quantity + '~' + cancelURL
-                   });*/
-
-
-                }
-
-
-
-              } else {
-                showError(view, orderRequest.responseText);
-                pause = false;
-              }
+          if(data.scalp == 'scalp' && data.side == 'buy'){
+            data.scalp = false;
+            data.side = 'sell';
+            data.type = 'stop-limit';
+            data.price = ((parseFloat(data.price)+.09).toFixed(2)).toString();
+            const sleep = (milliseconds) => {
+              return new Promise(resolve => setTimeout(resolve, milliseconds))
             }
-          };
-          orderRequest.onerror = function(e) {
-            showError(view, orderRequest.responseText);
-            pause = false;
-          };
-
-          var params =
-            'override_day_trade_checks=true'+
-            '&symbol=' + symbol +
-            '&instrument=' + url +
-            '&account=https://api.robinhood.com/accounts/' + account_number + '/' +
-            '&time_in_force=' + time_in_force +
-            '&side=' + side +
-            '&quantity=' + quantity;
-
-          if (type == 'stop') {
-            params += '&type=' + 'market';
-            params += '&trigger=' + 'stop';
-            params += '&stop_price=' + price;
-          } else if (type == 'stop-limit') {
-            params += '&type=' + 'limit';
-            params += '&trigger=' + 'stop';
-            params += '&price=' + price;
-            params += '&stop_price=' + price;
-          } else if (type == 'buy-stop-limit') {
-           // var stop_price_limit = (parseFloat(price) < 1.00 ? (parseFloat(price) - 0.0001).toFixed(4)  : (parseFloat(price)- 0.01).toFixed(2) ).toString();
-
-            params += '&type=' + 'limit';
-            params += '&trigger=' + 'immediate';
-            params += '&price=' + price;
-      
-
-
-
-
-          } else {
-            params += '&type=' + type;
-            params += '&trigger=' + 'immediate';
-            params += '&price=' + price;
-
+            sleep(200).then(() => {
+              sendOrder(data, view);
+            })
+            
           }
 
-          orderRequest.send(params);
+
+
+
+          if (type != 'market') {
+            var fileName = $(document).find('.data-row.selected')[0].attributes["data-name"].value;
+            allowed = true;
+            pause = false;
+
+          }
 
 
 
         } else {
-          showError(view, instrumentRequest.responseText);
+          showError(view, orderRequest.responseText);
           pause = false;
         }
       }
     };
-    instrumentRequest.onerror = function(e) {
-      showError(view, instrumentRequest.responseText);
+    orderRequest.onerror = function(e) {
+      showError(view, orderRequest.responseText);
       pause = false;
     };
-    instrumentRequest.send(null);
+
+    var params =
+      'override_day_trade_checks=true'+
+      '&symbol=' + symbol +
+      '&instrument=https://api.robinhood.com/instruments/' + instrument + '/' +
+      '&account=https://api.robinhood.com/accounts/' + account_number + '/' +
+      '&time_in_force=' + time_in_force +
+      '&side=' + side +
+      '&quantity=' + quantity;
+
+    if (type == 'stop') {
+      params += '&type=' + 'market';
+      params += '&trigger=' + 'stop';
+      params += '&stop_price=' + price;
+    } else if (type == 'stop-limit') {
+      params += '&type=' + 'limit';
+      params += '&trigger=' + 'stop';
+      params += '&price=' + price;
+      params += '&stop_price=' + price;
+    } else if (type == 'buy-stop-limit') {
+     // var stop_price_limit = (parseFloat(price) < 1.00 ? (parseFloat(price) - 0.0001).toFixed(4)  : (parseFloat(price)- 0.01).toFixed(2) ).toString();
+
+      params += '&type=' + 'limit';
+      params += '&trigger=' + 'immediate';
+      params += '&price=' + price;
+
+
+
+
+
+    } else {
+      params += '&type=' + type;
+      params += '&trigger=' + 'immediate';
+      params += '&price=' + price;
+
+    }
+
+    orderRequest.send(params);
+
+
+
 
   }
 
@@ -2010,10 +1922,10 @@
       if (view[0].isAnimating) return; // Ignore mid-animation updates. TODO: queue and update on animation-end
       view[0].dataset.type = type;
       mediaType = mediaType ? " type-" + mediaType : "";
-      content = '<div class="new content ' + type + mediaType + " " + view[0].animDirection + '">' + content + "</div>";
+     // content = '<div class="new content ' + type + mediaType + " " + view[0].animDirection + '">' + content + "</div>";
       var navRegex = /(forward|back|center)/;
       if (view[0].animDirection === "center") {
-        view.find(".content").replaceClass(navRegex, "center").before(content);
+        view.find(".content").append(content);
         view.find(".new").addClass(type);
         finish();
       } else {
@@ -2034,7 +1946,7 @@
         getOtherViews(view[0].vId).each(function() {
           this.style.zIndex = "auto";
         });
-        view.find(".content:not(.new)").remove();
+        //view.find(".content:not(.new)").remove();
         view.find(".new").removeClass("new");
         view.find(".data-row").removeClass("animating");
         if (view[0].dataset.type === "directory") {
@@ -2046,13 +1958,7 @@
         resolve();
 
       }
-    }).then(function() {
-      /*$(document).siblings().removeClass("selected");
-      if (selectedRow && $(document).find('.data-row[data-id="' + selectedRow + '"]')[0]) {
-        $(document).find('.data-row[data-id="' + selectedRow + '"]')[0].classList.add("selected");
-        $(document).find('.out-of-focus').hide();
-      }*/
-    });
+    })
   }
 
   function toggleButtons(view, type) {
@@ -2183,11 +2089,7 @@
       droppy.activeView = view[0].vId;
       var icon, isInternal = event.originalEvent.dataTransfer.effectAllowed === "copyMove";
       if (view[0].dataset.type === "directory" && isInternal) {
-        icon = "menu";
-      } else if (!isInternal) {
         icon = "upload-cloud";
-      } else {
-        icon = "open";
       }
 
       view.find(".dropzone svg").replaceWith(svg(icon));
@@ -2300,7 +2202,7 @@
       var html = Handlebars.templates[isFile ? "new-file" : "new-folder"]();
 
       stopEdit(view, view.find(".editing"), isEmpty);
-      if (isEmpty) content.html(Handlebars.templates["file-header"]());
+     //if (isEmpty) content.html(Handlebars.templates["file-header"]());
       content.prepend(html);
       content[0].scrollTop = 0;
       var dummy = $(".data-row.new-" + (isFile ? "file" : "folder"));
@@ -2367,6 +2269,7 @@
           path: getRootPath(),
         },
       }).then(function() {
+        reload = false;
         droppy.socket.close(4000);
         render("login");
         initAuthPage();
@@ -2447,7 +2350,9 @@
 
       toggleCatcher(false);
       showSpinner(view);
+      $(entry[0]).remove();
       sendMessage(view[0].vId, "DELETE_FILE", entry[0].dataset.name);
+
     });
   }
 
@@ -3578,11 +3483,7 @@
     return time + mins + ":" + secs;
   }
 
-  setInterval(function() {
-    if (reload)
-      getPositions(getActiveView());
-
-  }, 2500);
+  
 
 
 
@@ -3652,13 +3553,24 @@
 
   function showError(view, text) {
     view = getView(0)
-    var box = view.find(".info-box");
+    var box = $(view.find(".info-box")[0]);
     clearTimeout(droppy.errorTimer);
     box.find(".icon svg").replaceWith(svg("exclamation"));
     box.children("span")[0].textContent = text;
-    if (text.indexOf('Order Placed') != -1) box[0].className = "info-box success in";
-    else box[0].className = "info-box error in";
+    box[0].className = "info-box error in";
     droppy.errorTimer = setTimeout(function() {
+      box.removeClass("in");
+    }, 3000);
+  }
+
+  function showDebug(view, text) {
+    view = getView(0)
+    var box = view.find(".info-box.debug");
+    clearTimeout(droppy.debugTimer);
+    box.find(".icon svg").replaceWith(svg("info"));
+    box.children("span")[0].textContent = text;
+    box[0].className = "info-box debug in";
+    droppy.debugTimer = setTimeout(function() {
       box.removeClass("in");
     }, 3000);
   }
@@ -4145,13 +4057,17 @@
 
 
 
-              getQuote(entries[entry].attributes['data-id'].value, view, function(quote) {
+              /*getQuote(entries[entry].attributes['data-id'].value, view, function(quote) {
                 var symbol = JSON.parse(quote)["symbol"]
                 var price = parseFloat(JSON.parse(quote)["last_trade_price"]);
                 var row = $(document).find('.data-row[data-id="' + symbol + '"]');
                 $(row).find('.price').attr('placeholder', price);
-                $(row).find('.quantity-input').attr('placeholder', price ? parseInt(5000 / price) : 0);
-              });
+                $(row).find('.quantity-input').attr('placeholder', price ? Math.round(parseInt(1000)/100)*100 : 0);
+                //$(row).find('.quantity-input').attr('placeholder', price ? Math.round(parseInt(riskAmount / price)/100)*100 : 0);
+              });*/
+              var row = $(document).find('.data-row[data-instrument="' + instrument + '"]');
+              $(row).find('.quantity-input').attr('placeholder', 1000);
+
 
               $(entries[entry]).find('.orders').empty();
               filterOrdersByInstrument(entries[entry].attributes['data-instrument'].value, orders).forEach(function(orderInfo) {
@@ -4256,8 +4172,8 @@
 
     var xhr = new XMLHttpRequest();
 
-    xhr.open("GET", "https://api.robinhood.com/orders/", true);
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.open("GET", "https://api.robinhood.com/orders/?"/*+'updated_at='+new Date().toJSON().slice(0,10)*/, true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=utf-8');
 
     xhr.setRequestHeader('Accept', 'application/json');
     xhr.setRequestHeader('Authorization', "Bearer " + token);
@@ -4286,7 +4202,7 @@
   function filterOrdersByInstrument(instrument, orders) {
 
     var orders = orders.filter(function(order) {
-      console
+      
       if (order["instrument"].indexOf(instrument) == -1) return false;
       //console.log(order['state'])
       if (order['state'] == 'filled' || order["state"] == 'rejected' || order["state"] == 'failed' || order["state"] == 'cancelled') return false;
@@ -4304,7 +4220,7 @@
   var cancelOrder = function(domElement, cancelURL) {
 
     if (domElement) cancelURL = $(domElement).attr('data-cancel-url');
-    var row = $(document).find('.selected')[0];
+    var row = $(document).find('.data-row.selected')[0];
     var view = getActiveView();
 
     /* if (token) otherShit(token)
@@ -4338,9 +4254,6 @@
                         dst: join(view[0].currentFolder, newName)
                       });
                     }*/
-
-          $(row).siblings().removeClass("selected");
-          if (selectedRow) $(document).find('.data-row[data-id="' + selectedRow + '"]')[0].classList.add("selected");
 
 
 

@@ -13,10 +13,7 @@ Written by Robert Cimrman
 import time
 
 
-import scipy.stats
-import numpy as np
 import warnings
-warnings.simplefilter('ignore', np.RankWarning)
 import sys
 
 import tosdb
@@ -45,175 +42,23 @@ from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
 
 from socketIO_client import SocketIO as sio
+from decimal import Decimal
+from math import floor
 
-# Fixing random state for reproducibility
-np.random.seed(19680801)
 
-###############################################################################
-#
-# Processing Class
-# ================
-#
-# This class plots data it receives from a pipe.
-#
-refreshInterval = 200
+refreshInterval = 25
 
 
 class ProcessPlotter(object):
     def __init__(self):
-       
-        
-           
-        self.volumeData2 = {}
+
         self.priceData = {}
-   
-
         self.stock = 'SPY'
-        
-        self.x = []
-        self.y = []
-        self.a = 0;
-        self.agg1 = 3; 
-        self.agg2 = 15;
-        self.agg3 = 30;
-        self.aggs = [self.agg1, self.agg2, self.agg3]
-
-        self.agg1Length = 18; 
-        self.agg2Length = 10;
-        self.agg3Length = 12
-
-        self.aggsLength = [self.agg1Length, self.agg2Length, self.agg3Length]
 
     def terminate(self):
         plt.close('all')
 
-    # def initialize(self):
-    #     snapshot1 = self.b1.stream_snapshot('SPY', 'Volume',date_time=True)
-    #     print(snapshot1);
-    #     micro, sec, minute, hour, day, month, year = snapshot1[0][1];
-        
-    #     latestT = time.mktime(datetime.datetime(year, month, day, hour, minute, sec).timetuple()) 
-       
-        
-        
-    #     for index in range(1):
-    #         print(snapshot1[0][1])
-    #         i = 0;
-     
-    #         ourCurrentFuckingIndex = self.aggsLength[index] -1;
-    #         largerVol =  snapshot1[0][0];
-           
-    #         while True:
-    #             micro, sec, minute, hour, day, month, year = snapshot1[i][1]
-    #             t = time.mktime(datetime.datetime(year, month, day, hour, minute, sec).timetuple()) 
-
-                
-
-    #             theDateTimeWeAreLookingFor =  latestT - (  (self.aggs[index]*self.aggsLength[index]) -  (ourCurrentFuckingIndex/self.aggsLength[index])*(self.aggs[index]*self.aggsLength[index]));
-    #             # print("theDateTimeWeAreLookingFor")
-    #             # print(theDateTimeWeAreLookingFor)
-    #             # print("currentT")
-    #             # print(t)
-
-          
-    #             if(ourCurrentFuckingIndex == -1 or  i + 1 >= len(snapshot1) ):
-    #                 # print('bye')
-    #                 break;
-    #             elif(t < theDateTimeWeAreLookingFor ):
-    #                 # print('hi')
-    #                 self.timeData[item][index].insert(0,ourCurrentFuckingIndex*self.aggs[index])
-    #                 ourCurrentFuckingIndex = ourCurrentFuckingIndex - 1;
-    #                 smallerVol = snapshot1[i][0];
-               
-    #                 self.volumeData2[item][index].insert(0,(largerVol - smallerVol));
-                    
-    #                 largerVol = smallerVol;
-
-    #             i = i +1;
-        
-         
-
-    def graph(self):
-        
-        for index in range(3):
-            item = self.stock;
-            i =  self.ax[index][0]
-            
-           
-            Ys = np.diff(np.array(self.volumeData2[item][index]));
-            
-            
-            YsSorted = Ys;
-            YsSorted = list(Ys)
-            #YsSorted.sort();
-            Xs = np.array(range(len(Ys)))
-            
-        
-           
-            if(len(Ys)==0):
-                continue;
-
-            #self.ax[index][1].clear()
-            self.ax[index][1].axhline(y=0, color='k')
-            
-            self.ax[index][1].plot(Xs, YsSorted,  'b-' )
-            
-            # verts = [(Xs[0], 0)] + list(zip(Xs, YsSorted)) + [(Xs[-1], 0)]
-            # poly = Polygon(verts, facecolor='0.9', edgecolor='0.0')
-            # self.ax[index][1].add_patch(poly) 
-
-            thirdGraph = self.ax[index][2];
-            #thirdGraph.clear()
-
-            thirdGraph.axhline(y=0, color='k')
-            
-            thirdGraph.plot(Xs, Ys,  'b-' )
-            # verts2 = [(Xs[0], 0)] + list(zip(Xs, Ys)) + [(Xs[-1], 0)]
-            # poly2 = Polygon(verts2, facecolor='0.9', edgecolor='0.0')
-            # thirdGraph.add_patch(poly2) 
-            
-
-            if len(Ys) > self.aggsLength[index]:
-                #self.timeData[item][index].pop(0)
-                Ys = np.diff(np.array(self.volumeData2[item][index]))[-self.aggsLength[index]:];
-                Xs = np.array(range(len(Ys)))
-
-            
-            #i.clear();
-            #i.scatter(Xs, Ys );
-            
-            
-            
-        
-
-         
-
-            #result = np.polyfit(Xs, Ys, 2)
-
-            # p = np.poly1d(result);
-            # yhat = p(Xs)                         # or [p(z) for z in x]
-            # ybar = np.sum(Ys)/len(Ys)          # or sum(y)/len(y)
-            # ssreg = np.sum((yhat-ybar)**2)   # or sum([ (yihat - ybar)**2 for yihat in yhat])
-            # sstot = np.sum((Ys - ybar)**2)    # or sum([ (yi - ybar)**2 for yi in y])
-            # rsquared = ssreg / sstot
-            
-            
-           
-                       
-            # self.ax[index][0].plot(Xs, p(Xs), 'r-')
-            # self.ax[index][0].text(Xs[0],Ys[0],rsquared)
-
-            # dprice = np.diff(self.priceData[item][index])
-            # v = np.diff(self.volumeData2[item][index]);
-
-
-            # v_buy = v * scipy.stats.norm.cdf(dprice / dprice.std())
-            # v_sell = v - v_buy
-            # bvpin = abs (v_sell - v_buy) / v
-            # if(len(bvpin) != 0):
-            #     self.ax[index][0].text(Xs[-1],Ys[-1],bvpin[-1])
-                
-
+  
 
     def call_back(self):
         
@@ -222,118 +67,47 @@ class ProcessPlotter(object):
             if command is None:
                 self.terminate()
                 return False
-            # elif(command.find('GetInfo-')!= -1):
-            #     item = command[command.find('-')+1:]
-            #     total_frame = self.b1.total_frame(date_time= True, labels=True);
-            #     print(total_frame)
-            #     info = {
-            #         "BID":float(total_frame[item].BID[0]), 
-            #         "ASK":float(total_frame[item].ASK[0])
-            #         };
-            #     print(info)
-            #     self.pipe.send(info)
+ 
             
             else:
                 self.stock = command
-
-                self.ax[0][0].clear()
-                self.ax[1][0].clear()
-                self.ax[2][0].clear()
-                self.ax[0][1].clear()
-                self.ax[1][1].clear()
-                self.ax[2][1].clear()
-                self.ax[0][2].clear()
-                self.ax[1][2].clear()
-                self.ax[2][2].clear()
-
-
-
-                
-              
-
 
                 if (command in self.b1.items()) == False:
                     self.b1.add_items(command)
             
               
                     self.priceData[command] = [[],[],[]]
-                    self.volumeData2[command] = [[],[],[]]
                     self.pipe.send('ADDED')
-                   
-                
-                  
-                         
+        
                 else:
-                    self.graph();
-                    
                     total_frame = self.b1.total_frame(labels=True);
-                    # print(total_frame)
-                    # info = {
-                    #     "BID":float(total_frame[item].BID[0]), 
-                    #     "ASK":float(total_frame[item].ASK[0])
-                    #     };
-                    # print()
                     self.pipe.send(json.dumps(total_frame))
-                    
 
-
-        time1 = time.time()
-        for item in self.b1.items():
-
-            
-            index = 0;
-            while index< 3:
-                
-                if ((self.a/(1000/refreshInterval)) % (self.aggs[index]) == 0) == False:
-                    index += 1
-                    continue
-                
-          
-                
-                
-                #self.priceData[item][index].append( float(self.b1.get(item,'LAST')));
-                self.volumeData2[item][index].append(float(self.b1.get(item,'VOLUME')));
-                  
-
-                index += 1
-                
-                self.graph();
-
-        print(time.time()- time1)
-                
-        self.a += 1
-        self.fig.suptitle(self.stock)
-
-        self.fig.canvas.draw()
-    
-
-
-       
         return True
 
     def __call__(self, pipe):
         print('starting plotter...')
         tosdb.init(dllpath="C:/TOSDataBridge-master/bin/Release/Win32/tos-databridge-0.9-x86.dll")
         b1 = tosdb.TOSDB_DataBlock(50, True);
-        b1.add_topics('Volume');
+        
+        b1.add_topics('CUSTOM19')
         b1.add_topics('Last');
 
         b1.add_topics('ASK');
-        b1.add_topics('CUSTOM19')
+        
         b1.add_topics('BID');
         b1.add_items('SPY')
         self.b1 = b1;
 
         for item in b1.items():
-            self.volumeData2[item] = [[],[],[]];
             self.priceData[item] = [[],[],[]];
 
 
         self.pipe = pipe
-        self.fig, self.ax = plt.subplots(3,3, sharex=False)
-        #self.fig.set_size_inches((8,8))
+        self.fig, self.ax = plt.subplots(1,1, sharex=False)
+        self.fig.set_size_inches((1,1))
         self.fig.tight_layout()
-        self.fig.subplots_adjust(top=.95)
+        
 
         timer = self.fig.canvas.new_timer(interval=refreshInterval)
         timer.add_callback(self.call_back)
@@ -342,19 +116,6 @@ class ProcessPlotter(object):
         print('...done')
         plt.show()
 
-###############################################################################
-#
-# Plotting class
-# ==============
-#
-# This class uses multiprocessing to spawn a process to run code from the
-# class above. When initialized, it creates a pipe and an instance of
-# ``ProcessPlotter`` which will be run in a separate process.
-#
-# When run from the command line, the parent process sends data to the spawned
-# process which is then plotted via the callback function specified in
-# ``ProcessPlotter:__call__``.
-#
 
 
 class NBPlot(object):
@@ -394,14 +155,56 @@ def main():
     pl = NBPlot()
 
     app = Flask(__name__)
-    app.config['SECRET_KEY'] = 'secret!'
+
     socketio = SocketIO(app)
 
 
-    @socketio.on('mymessage')
-    def test_message(message):
+    @socketio.on('GET_BID')
+    def getBid(message):
         print(message)
-        emit('myresponse', pl.plot(message))
+
+        index = 1
+    
+        response = json.loads(pl.plot(message['src']))
+        response = Decimal(float(response[message['src']][index]) - .05);
+        response = float(round(response,2))
+
+        emit('myresponse', {'price': response, 'side':message['side']} )
+
+    @socketio.on('GET_LAST')
+    def getLast(message):
+        print(message)
+
+        response = json.loads(pl.plot(message['src']))
+        
+        priceBeforeRound = (float(response[message['src']][0])+float(response[message['src']][1]))/2.0
+        priceBeforeRound = Decimal(priceBeforeRound)
+        priceBeforeRound = float(round(priceBeforeRound, 2))
+        
+        if(response[message['src']][2] == "0.05"):
+            priceBeforeRound = floor(priceBeforeRound * 20) / 20
+            
+        print(response)
+        emit('myresponse', {'price': priceBeforeRound, 'side' :message['side'],})
+
+    @socketio.on('GET_ASK')
+    def getAsk(message):
+        print(message)
+        
+        index = 0
+    
+        response = json.loads(pl.plot(message['src']))
+        response = Decimal(float(response[message['src']][index]) + .05); 
+        response = float(round(response,2))
+
+       
+        emit('myresponse', {'price': response, 'side':message['side'], 'scalp':message['scalp']})
+
+    @socketio.on('ADD_SYMBOL')
+    def addSymbol(message):
+        print(message)
+      
+        pl.plot(message['src'])
 
 
 
@@ -413,61 +216,10 @@ def main():
 
     @socketio.on('connect')
     def test_connect():
-        emit('my response', {'data': 'Connected'})
-        print('Connected.')
-
-    
-    
+        emit('my response', {'data': 'Data Bridge Connected'})
+        print('Data Bridge Connected.')
 
     socketio.run(app)
- 
-    
-    
-
-# def add_input(input_queue):
-#     while True:
-#         input_queue.put(sys.stdin.readline())
-
-
-
-
-
-
-    # input_queue = Queue.Queue()
-
-    # input_thread = threading.Thread(target=add_input, args=(input_queue,))
-    # input_thread.daemon = True
-    # input_thread.start()
-
-    # last_update = time.time()
-
-
-    
-
-
-    # while True:
-
-    #     if time.time()-last_update>0.5:
-    #         sys.stdout.write(".")
-    #         last_update = time.time()
-
-    #     if not input_queue.empty():
-    #         line = input_queue.get()
-    #         if(len(line) != 0 ):
-                
-
-
-
-
-        
-
-    # 
-    # while True:
-    #     line = sys.stdin.readline();
-    #     print(line)
-    #     
-    
-
 
 if __name__ == '__main__':
     main()

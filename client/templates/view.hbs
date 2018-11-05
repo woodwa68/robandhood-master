@@ -19,12 +19,41 @@
       <button class="logout button tip tip-sw" aria-label="Sign out">{{{svg "signout"}}}</button>
     </div>
   </div>
+  <div class="file-header">
+    <span class="basicStockInfo" >
+      <span class="file-link entry-link" data-toggle="popover" title="Popover Header" data-content="Some content inside the popover" >Symbol</span>
+      <span class="avg-buy-price">Avg. Price</span>
+      <span class="shares" ># Owned</span>
+      <span class="buys" >Orders</span>
+      <span class="sells" >For Sale</span>
+    </span>
+    <span class="mtime">
+      Price
+    </span>
+    <span class="quantity">
+      Quantity
+    </span>
+    <span class="orders" > </span>
+  </div>
   <ul class="path"></ul>
   <div class="content-container"><div class="content"></div></div>
   <div class="dropzone">
     <svg></svg>
   </div>
   <div class="info-box">
+    <div class="icon">{{{svg "link"}}}</div>
+    <span></span>
+    <div class="link-out mousetrap"></div>
+    <div class="link-options">
+      <div class="copy-link tip tip-nw" aria-label="Copy to clipboard">
+        {{{svg "copy"}}}<div>Copy</div>
+      </div>
+      <div class="dl-link checked tip tip-sw" aria-label="Trigger a download when opened">
+        {{{svg "check"}}}<div>Is DL</div>
+      </div>
+    </div>
+  </div>
+  <div class="info-box debug">
     <div class="icon">{{{svg "link"}}}</div>
     <span></span>
     <div class="link-out mousetrap"></div>

@@ -46,7 +46,8 @@ let ready = false;
 var orderFileDate = '';
 var lastOrderTime = '';
 /*var pyshell = new PythonShell('tosdb_test.py');*/
-var socket;
+var dataBridgeSocket;
+var graphSocket;
 
 const droppy = function droppy(opts, isStandalone, dev, callback) {
 
@@ -453,20 +454,33 @@ function createListener(handler, opts, callback) {
 // WebSocket functions
 function setupSocket(server) {
 
-  socket = io.connect('http://localhost:5000');
+  dataBridgeSocket = io.connect('http://localhost:5000');
 
-    socket.on('connect',() => {
+    dataBridgeSocket.on('connect',() => {
       log.info("Connected to Data Bridge.");
     });
 
-    socket.on('myresponse',(data) => {
+    dataBridgeSocket.on('myresponse',(data) => {
       
       sendObj(sid,{
-        type: "INFO",
-        vId: vId,
+        type: "DATA_BRIDGE_RESPONSE",
         data: data
       })
     });
+
+  graphSocket = io.connect('http://localhost:5001');
+
+    graphSocket.on('connect',() => {
+      log.info("Connected to Graph.");
+    });
+
+    /*graphSocket.on('myresponse',(data) => {
+      
+      sendObj(sid,{
+        type: "DATA_BRIDGE_RESPONSE",
+        data: data
+      })
+    });*/
 
   // fall back from uws to ws in case it failed to build
   try {
@@ -506,6 +520,7 @@ function setupSocket(server) {
 
     ws.on("message", function(msg) {
       msg = JSON.parse(msg);
+      console.log(msg)
     
 
       if (msg.type !== "SAVE_FILE") {
@@ -671,14 +686,26 @@ function setupSocket(server) {
         if (!validatePaths(msg.data, msg.type, ws, sid, vId)) return;
         filetree.mk(msg.data);
       } else if (msg.type === "FOCUSED") {
-        socket.emit('mymessage', msg.data.src, (data) => {
+        graphSocket.emit('mymessage', msg.data, (data) => {
         
         });
-
+        dataBridgeSocket.emit('ADD_SYMBOL', msg.data, (data) => {
         
-        /*socket.emit('getinfo', msg.data.src, (data) => {
-          console.log(data);
-        });*/
+        });
+      } else if (msg.type === "GET_LAST") {
+        dataBridgeSocket.emit('GET_LAST', msg.data, (data) => {
+          
+        });
+      } else if (msg.type === "GET_ASK") {
+        dataBridgeSocket.emit('GET_ASK', msg.data, (data) => {
+          
+        });
+      } else if (msg.type === "GET_BID") {
+        dataBridgeSocket.emit('GET_BID', msg.data, (data) => {
+          
+        });
+
+
       } else if (msg.type === "RENAME") {
         if (config.readOnly) return sendError(sid, vId, "Files are read-only.");
         const rSrc = msg.data.src;
@@ -1330,9 +1357,6 @@ function sendFiles(sid, vId) {
       log.info(req, res, "Received " + names.length + " files");
       done = true;
 
-      socket.emit('mymessage', names[0].split('~')[0].toUpperCase(), (data) => {
-        
-      });
 
       // remove all temporary files if one hit the limit
       if (limitHit) return removeTempFiles();
