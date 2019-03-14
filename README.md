@@ -1,5 +1,3 @@
 # robandhood
-[![robandhood](https://i.ibb.co/bB3HbmT/thumbnail.png)](https://www.youtube.com/watch?v=n0kMNjp4g60 "robandhood")
-<div align="center">
-<a href="https://ibb.co/bB3HbmT"><img src="https://i.ibb.co/bB3HbmT/thumbnail.png" alt="thumbnail" border="0" width="100%" /></a>
-</div>
+[![robandhood](https://lh3.googleusercontent.com/3epxtcrTgNe36QIaaW396UiMsp7UnfwOT5RcEDwgxyVPApsuOubvbSA1p8CUvqPAEkwlsbkmAP0VP58rJ3JWw3BrHJe9bmazjoSCgzaC2AS3ZqOVK6nvc6u2oReBuxXzCL2CyYbKs0QllQEspbn9alC4vEawnTI-wfN8-CtyubzXnNSAmFxy1Cep7f924bg_319TDvKlrFs18z5xMAACa6V1-0-l-x1y85UjvVdMv2p1_Sv6D2fvN10GMyGyODTAYWBrao6kt7_WsgNstl2lDO6Z7-2cyyNi5xfdbC-BfGOpOOnWXqA2oZwADz_g-ibd_i8_AMNULIVoe5KIoW9LRi9_LotQusOQM1WFcTCdbrnYlIcZCTyeos2VFKa944vqA_yeon0uyqAMOqf2UKht3X4asse99oEME-PnrZr_YFKVMa_6nEP3mS_DkbVWKvIFXmaB_ONcQcmKnJ1Ph3W8VBboqy8yXpyqGdKWh_YkBbD1cv1XEyePn2SmW_yTmOJdjt7Bvx5THKujkh0I9oeJrJX3c8lijDtkZOIR4FtAWDiyGcvWrZceOUJyUOEwRH8FG_tTGEMER7NEWuHOkRSwUlrezruOnWOUgO5yaTHP13S9XU7N7bTQAQUAmu6NMF8rODyAlmxptXF20gHlCKvLL0TzQ03jVIbLpqKEjy0clT1GJVjQMcX4ssthwoiVFAr-RgBHGaUNmT6Bzr4b8jfPEa4=w1560-h878-no)](https://www.youtube.com/watch?v=n0kMNjp4g60 "robandhood")
+
