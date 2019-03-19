@@ -11,12 +11,25 @@
   <a class="delete"><svg class="trash"><use xlink:href="#i-trash"></svg>Delete</a>
 </div>
 <div id="about-box">
-  <p id="about-title"></p>
-  <p id="about-engine"></p>
-  <a id="about-fork" target="_blank" rel="noopener" href="https://github.com/silverwind/droppy">
-    <svg class="github"><use xlink:href="#i-github"></svg><span>GitHub project page</span>
-  </a>
-  <p id="about-copy">©<a href="https://github.com/silverwind" target="_blank" rel="noopener">silverwind</a></p>
+  <div class="settings-title">Settings</div>
+  <ul class="list-prefs">
+     <li>
+        <label>Default Quantity</label>
+        <input class="default-quantity-input" type="number" placeholder="">
+      </li>   
+      <li><label>Enable PositionBot</label>
+        <span class="position-bot" ><input class="position-bot-checkbox" type="checkbox" name="position-bot" ></span>
+      </li>
+    <li><label>Enable ExtendedHours Executions</label>
+    <span class="extended-hours" ><input class="extended-hours-checkbox" type="checkbox" name="extended-hours" ></span>          
+      </li>
+  </ul>
+  <div class="about-buttons">
+          <a href="" class="quantity-button save-cancel" id="Save"><span>Save</span></a>
+          <a href="" class="quantity-button save-cancel"><span>Cancel</span></a>
+  </div>
+
+  
 </div>
 <div id="prefs-box"></div>
 <div id="drop-select">

@@ -1,14 +1,13 @@
 <ul class="list-prefs">
+    <div class="prefs-title">Hotkeys</div>
   {{#each opts}}
     <li>
       <label>{{this.label}}</label>
-      <select class="{{this.name}}">
-        {{#select this.selected}}
-          {{#each this.values}}
-            <option value="{{this}}">{{@key}}</option>
-          {{/each}}
-        {{/select}}
-      </select>
+
+ 
+      <input id="{{this.name}}" class="options-input" value="{{this.selected}}" placeholder="Enter Key" spellcheck="false">
+
+        
     </li>
   {{/each}}
 </ul>

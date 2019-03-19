@@ -55,6 +55,7 @@ np.random.seed(19680801)
 # This class plots data it receives from a pipe.
 #
 refreshInterval = 1
+arraySize = 60
 
 
 class ProcessPlotter(object):
@@ -72,7 +73,7 @@ class ProcessPlotter(object):
         self.x = []
         self.y = []
         self.a = 0;
-        self.agg1 = 3; 
+        self.agg1 = 2; 
         self.agg2 = 15;
         self.agg3 = 30;
         self.aggs = [self.agg1]
@@ -133,55 +134,39 @@ class ProcessPlotter(object):
          
 
     def graph(self):
-        
-        
+
         item = self.stock;
-     
-        
-       
+
         Ys = np.diff(np.array(self.volumeData2[item][0]));
-        priceChanges = np.diff(np.array(self.priceData[item][0]));
-
-        colors = []
-
-        for price in priceChanges:
-            if(price > 0):
-                colors.append('g')
-            elif(price == 0):
-                colors.append('k')
-            else:
-                colors.append('r')
 
         
-
-        
-        
-        YsSorted = Ys;
-        YsSorted = list(Ys[-100:])
         #YsSorted.sort();
-        Xs = np.array(range(len(YsSorted)))
+        Xs = np.array(range(len(Ys)))
 
-        colors = colors[-len(YsSorted):]
+        # priceChanges = np.diff(np.array(self.priceData[item][0]));
+        # colors = []
 
-        
-        
-    
-       
-        
+        # for price in priceChanges:
+        #     if(price > 0):
+        #         colors.append('g')
+        #     elif(price == 0):
+        #         colors.append('k')
+        #     else:
+        #         colors.append('r')
+
+        # colors = colors[-len(YsSorted):]
+
+
 
         self.ax.clear()
         self.ax.axhline(y=0, color='k')
        
-        greenXs = [];
-        redXs = [];
 
-        redYs = [];
-        greenYs = [];
         if(len(Ys)==0):
             return
         else:
-            self.ax.scatter(Xs, YsSorted, c=colors)
-            self.ax.plot(Xs, YsSorted, 'k-', linewidth=.5)
+            self.ax.scatter(Xs, Ys,)
+            self.ax.plot(Xs, Ys, 'k-', linewidth=.5)
 
             # xIndex = 0;
             # for c in colors:
@@ -358,9 +343,15 @@ class ProcessPlotter(object):
                 #self.priceData[item][index].append( float(self.b1.get(item,'LAST')));
                 vol = float( self.b1.get(item,'VOLUME',check_indx=False));
                 last = float( self.b1.get(item,'LAST',check_indx=False));
+               
+               
                 if(vol > 0):
                     self.volumeData2[item][index].append(vol);
                     self.priceData[item][index].append(last)
+
+                if(len(self.volumeData2[item][index])>arraySize):
+                    self.volumeData2[item][index].pop(0)
+                    self.priceData[item][index].pop(0)
 
                 
                 
@@ -391,9 +382,11 @@ class ProcessPlotter(object):
     def __call__(self, pipe):
         print('starting plotter...')
         tosdb.init(dllpath="C:/TOSDataBridge-master/bin/Release/Win32/tos-databridge-0.9-x86.dll")
-        b1 = tosdb.TOSDB_DataBlock(50, True);
+        b1 = tosdb.TOSDB_DataBlock(50, False);
+
         b1.add_topics('Volume');
         b1.add_topics('Last');
+        b1.add_topics('LAST_SIZE');
 
       
 
@@ -408,7 +401,7 @@ class ProcessPlotter(object):
 
         self.pipe = pipe
         self.fig, self.ax = plt.subplots(1, sharex=False)
-        #self.fig.set_size_inches((8,8))
+        self.fig.set_size_inches((4,2.5))
         self.fig.tight_layout()
         self.fig.subplots_adjust(top=.95)
 
@@ -480,12 +473,6 @@ def main():
         print(message)
         pl.plot(message['src'])
 
-
-
-    @socketio.on('connect')
-    def test_connect():
-        emit('my response', {'data': 'Graph Connected'})
-        print('Graph Connected.')
 
     
     

@@ -47,6 +47,7 @@ var orderFileDate = '';
 var lastOrderTime = '';
 /*var pyshell = new PythonShell('tosdb_test.py');*/
 var dataBridgeSocket;
+var positionBotSocket;
 var graphSocket;
 
 const droppy = function droppy(opts, isStandalone, dev, callback) {
@@ -468,6 +469,21 @@ function setupSocket(server) {
       })
     });
 
+  positionBotSocket = io.connect('http://localhost:5002');
+
+    dataBridgeSocket.on('connect',() => {
+      log.info("Connected to Position Bot.");
+    });
+
+    positionBotSocket.on('STOP_LOSS',(data) => {
+      
+      sendObj(sid,{
+        type: "DATA_BRIDGE_RESPONSE",
+        data: data
+      })
+    });
+
+
   graphSocket = io.connect('http://localhost:5001');
 
     graphSocket.on('connect',() => {
@@ -520,8 +536,7 @@ function setupSocket(server) {
 
     ws.on("message", function(msg) {
       msg = JSON.parse(msg);
-      console.log(msg)
-    
+   
 
       if (msg.type !== "SAVE_FILE") {
         log.debug(ws, null, chalk.magenta("RECV "), utils.pretty(msg));
@@ -685,6 +700,14 @@ function setupSocket(server) {
         if (config.readOnly) return sendError(sid, vId, "Files are read-only.");
         if (!validatePaths(msg.data, msg.type, ws, sid, vId)) return;
         filetree.mk(msg.data);
+      } else if (msg.type === "ADD_POSITION") {
+        positionBotSocket.emit('ADD_POSITION', msg.data, (data) => {
+        
+        });
+      } else if (msg.type === "REMOVE_POSITION") {
+        positionBotSocket.emit('REMOVE_POSITION', msg.data, (data) => {
+        
+        });
       } else if (msg.type === "FOCUSED") {
         graphSocket.emit('mymessage', msg.data, (data) => {
         

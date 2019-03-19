@@ -89,7 +89,7 @@ nav {
 .view.right { left:50%; right:0 }
 .view.right .content.directory { border-left: 1px solid #ccc }
 
-.view.left .prefs, .view.left .about, .view.left { display: none }
+.view.left .prefs, .view.left { display: none }
 
 .content {
   left: 0;
@@ -320,6 +320,8 @@ path {
   visibility: hidden;
 }
 
+
+
 .file-header {
   display: flex;
   color: #555;
@@ -330,6 +332,7 @@ path {
   user-select: none;
   align-items: center;
   padding: 0 .1rem;
+  pointer-events: none;
 }
 
 .file-header span {
@@ -357,23 +360,37 @@ path {
   margin-left: .25rem;
 }
 
+
+
+.options-input,
 input[placeholder] {
 	font-size: 85%;
-  width: 100%;
  	-webkit-appearance: textfield;
-    background-color: white;
-    -webkit-rtl-ordering: logical;
-    user-select: text;
-    cursor: auto;
-    padding: 1px;
-    border-width: 2px;
-    border-style: inset;
-    border-top-style: inset;
-    border-right-style: inset;
-    border-bottom-style: inset;
-    border-left-style: inset;
-    border-color: initial;
-    border-image: initial;
+  background-color: white;
+  -webkit-rtl-ordering: logical;
+  user-select: text;
+  cursor: auto;
+  padding: 1px;
+  border-width: 2px;
+  border-style: inset;
+  border-top-style: inset;
+  border-right-style: inset;
+  border-bottom-style: inset;
+  border-left-style: inset;
+  border-color: initial;
+  border-image: initial;
+}
+
+
+input[placeholder]{
+  width: 100%;
+}
+
+.options-input[placeholder="Enter Key"]{
+  color: transparent;
+  text-shadow: 0 0 0 #2196f3;
+  width:inherit;
+
 }
 
 input.order-type {
@@ -387,7 +404,9 @@ input.order-type {
   white-space: nowrap;
 }
 
-
+.pending-orders{
+  padding-left:5px;
+}
 
 .basicStockInfo{
 	font-size: 90%;
@@ -396,6 +415,10 @@ input.order-type {
   border-right: 1px solid #b1b1b1;
   margin-right: 5px;
 }
+.border-right{
+  border-right: 1px solid #b1b1b1;
+}
+
 .data-row.selected > .entry-link,
 .data-row.selected > .basicStockInfo >.avg-buy-price,
 .data-row.selected > .basicStockInfo >.shares{
@@ -430,8 +453,12 @@ input.order-type {
 
 
 
-.newview, .path, .prefs, .about, .af, .ad, .cf, .cd{
+.newview, .path, .af, .ad{
 	display: none !important;
+}
+
+.cf, .cd{
+  visibility: hidden;
 }
 
 
@@ -471,6 +498,19 @@ a.quantity-button.third {
 
 }
 
+span.about-buttons{
+  align-items: center;
+}
+
+a.quantity-button.save-cancel
+{
+  margin: 0px 3px;  
+  border-radius: .3em  !important;
+  font-size: 80% !important;
+  padding: 0.2em .7em;
+
+}
+
 a.quantity-button span{
 	display: inline-block;
     -webkit-transform: scale(1.2,1);
@@ -479,6 +519,7 @@ a.quantity-button span{
 a.quantity-button.percent-five,
 a.quantity-button.half {
 	border-radius: 0 .3em .3em  0em !important;
+
 }
 
 a.quantity-button.percent-five{
@@ -548,9 +589,7 @@ a.quantity-button.percent-five{
     content: "\2718";        
 }
 
-.save:before {
-    content: "\2714";        
-}
+
 
 .email:before {
     content: "\2709";        
@@ -634,7 +673,26 @@ a.quantity-button.percent-five{
 
  
 }
-.line-buttons span svg.up-arrow, .line-buttons a svg {-webkit-filter: drop-shadow( 1px 1px .1px #000 );  }
+.line-buttons span svg.up-arrow, .line-buttons a svg {
+  -webkit-filter: drop-shadow( 1px 1px .1px #000 );
+ 
+}
+
+.limit-order:active,
+.sell svg.up-arrow:active{
+
+    position: relative;
+    top: 2px;
+  
+}
+
+.buy svg.up-arrow:active{
+
+    position: relative;
+    top: -2px;
+
+  
+}
 
 .icon-play svg, .icon-view svg {
   width: 24px; height: 24px;
@@ -1314,13 +1372,31 @@ svg.upload-cloud{
 @media (max-width: 639px) { .time-max, .time-sep { visibility: hidden } }
 
 /* =============================== About box =============================== */
+#about-box > ul > li{
+  height:   23px;
+}
+
+#about-box > ul > li > span > input{
+  vertical-align:   middle !important ;
+}
+
+
+.default-quantity-input{
+  width:  66px !important; 
+}
+.default-quantity-input::-webkit-inner-spin-button, 
+.default-quantity-input::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0;
+
+}
 
 #about-box {
   background: #eee;
   border-radius: 6px;
   box-shadow: 0 8px 24px rgba(0,0,0,.3);
   color: #333;
-  height: 150px;
+  height: 140px;
   top: 50%;
   left: 50%;
   opacity: 0;
@@ -1329,7 +1405,7 @@ svg.upload-cloud{
   transition: .4s, visibility 0s .4s;
   transform: translate(-50%, -50%);
   width: 300px;
-  text-align: center;
+  padding: .3em;
   z-index: 64;
 }
 #about-box.in { opacity: 1; visibility: visible; transition: .4s }
@@ -1402,18 +1478,39 @@ svg.upload-cloud{
 }
 #prefs-box.in { opacity: 1; visibility: visible; transition: .4s }
 
-@media (min-width: 800px) { #prefs-box { width: 24em } }
-@media (max-width: 799px) { #prefs-box { width: 80%  } }
+
+#prefs-box { 
+  width: 550px;
+
+} 
 #prefs-box li:hover { background: #ddd; color: #000; }
 
-.list-prefs li { display: flex; padding: .125em .25em; border-radius: 3px }
+.about-buttons,
+.settings-title{
+  padding: 7px 0px;
+}
+
+.about-buttons {
+  text-align: center;
+}
+
+.prefs-title, .settings-title{
+    text-align: center;
+    font-weight: 900;
+}
+
+.list-prefs{
+    font-size: 102% !important ;  
+}
+.list-prefs li { display: flex; padding: .1em .25em; border-radius: 3px }
 .list-prefs li:first-of-type { margin-top: 0 }
+
 
 .list-prefs label {
   display: inline-block;
   white-space: nowrap;
   line-height: 1.33em;
-  flex: 1;
+  flex: 2.5;
 }
 
 @media (max-width: 639px) {

@@ -238,110 +238,7 @@
   }
 
   
-  var lastSubmit = '';
-  $(document).unbind('keydown').bind('keydown', function(event) {
-    if(event.target.className =="blank-input"){
-      $(document).find(".blank-input").reg('submit',function(event) {
-        if(lastSubmit == event.target.value.toUpperCase())
-          return;
-        lastSubmit = event.target.value.toUpperCase();
-        var data = {
-          'originalEvent': {
-            'dataTransfer' :new DataTransfer()
-          },
-          'preventDefault':  function (){},
-          'stopPropagation':  function (){},
-          'target':$('.blank-input')
-
-        };
-        data['originalEvent'].dataTransfer.setData('text', event.target.value.toUpperCase())
-        var e = jQuery.Event( "drop", data)
-        
-        $(getActiveView()).trigger(e);
-        event.stopPropagation();
-      
-      });
-      if(event.key == "Enter"){
-        $(document).find('.blank-input').trigger('submit');
-      }
-      return;
-    }
-
-    event.stopPropagation();
-
-    
-
-
-    if (event.repeat != undefined) {
-      allowed = !event.repeat;
-    }
-    if (!allowed) return;
-    allowed = false;
-
-    if (event.key == 'ArrowRight' || event.key == 'ArrowLeft' || event.key == 'ArrowUp' || event.key == 'ArrowDown' || event.key == 'f' || event.key == 's' || event.key == 'c' || event.key == 'w' || event.key == 'q'  || event.key == 'r') {
-
-
-      if (event.key == "ArrowUp") {
-        changeSelection(true);
-        ///incrementAmount(true);
-      } else if (event.key == "ArrowDown") {
-        changeSelection(false);
-      }
-
-      event.preventDefault();
-
-      var element = event.target;
-
-      var row = $(document).find('.data-row.selected')[0];
-
-      if (event.key == "ArrowRight") {
-        $(row).find('.quantity-input').focus();
-      }
-      else if (event.key == "ArrowLeft") {
-        $(row).find('.price').focus();
-      }
-      else if (event.key == 'f') { 
-
-        sendMessage(null, "GET_BID",{
-          src:  $(row).attr('data-id'),
-          side: "sell",
-          scalp: false
-        });
-
-      } 
-      else if (event.key == 's') {
-
-         sendMessage(null, "GET_LAST",{
-          src:  $(row).attr('data-id'),
-          side: "sell",
-          scalp: false
-        });
-
-      } 
-      else if( event.key == 'w'){
-        changeQuantity(event, 1 / 2.0);
-      } 
-      else if(event.key == 'q'){
-
-        sendMessage(null, "GET_ASK",{
-          src:  $(row).attr('data-id'),
-          side: "buy",
-          scalp: false
-        });
-       } 
-       else if(event.key == 'r'){
-
-        sendMessage(null, "GET_ASK",{
-          src:  $(row).attr('data-id'),
-          side: "buy",
-          scalp: 'scalp'
-        });
-      }
-      else if (event.key == 'c') {
-        cancelAllOrders();
-      }
-    }
-  });
+  
 
 
   // ============================================================================
@@ -390,8 +287,8 @@
   $.fn.transition = function(oldClass, newClass) {
     if (!newClass) {
       newClass = oldClass;
-      oldClass = null;
-    }
+      oldClass = null
+ ;   }
 
     // Force a reflow
     // https://gist.github.com/paulirish/5d52fb081b3570c81e3a
@@ -496,6 +393,19 @@
     autonext: false,
     renameExistingOnUpload: false,
     sharelinkDownload: true,
+    buyHotkey: "Q",
+    sellBetweenBidAsk: "S",
+    sellBelowAsk: "F",
+    cancelOrders: "C",
+    inputPrice: "ArrowLeft",
+    inputQuantity: "ArrowRight",
+    traverseUp: "ArrowUp",
+    traverseDown: "ArrowDown",
+    sendOrder: "Enter",
+    defaultQuantityInput: 100,
+    enablePositionBot: false,
+    enableExtendedHours: false
+     
   };
 
   function savePrefs(prefs) {
@@ -737,10 +647,11 @@
         case "DATA_BRIDGE_RESPONSE":
           showDebug(view, JSON.stringify(msg.data));
           var row = $(document).find('.data-row.selected')[0];
-          var symbol = row.attributes["data-id"].value;
-          var instrument = row.attributes["data-instrument"].value;
-          var quantity = $(row).find('.quantity-input')[0].value;
+          var symbol = msg.data.symbol == undefined ? row.attributes["data-id"].value : msg.data.symbol;
+          var instrument = msg.data.instrument == undefined ? row.attributes["data-instrument"].value : msg.data.instrument;
+          var quantity = msg.data.quantity == undefined ? $(row).find('.quantity-input')[0].value : msg.data.quantity;
           var price = (parseFloat(msg.data.price).toFixed(2)).toString();
+          var scalp = msg.data.scalp == undefined ? false : msg.data.scalp;
 
           var data = {
             row: row,
@@ -750,9 +661,11 @@
             quantity: quantity,
             type: 'limit',
             side: msg.data.side,
-            scalp: msg.data.scalp
+            scalp: scalp
           };
-          sendOrder(data, getActiveView());
+
+          if(msg.data.auto == undefined ? true : $(document).find('.position-bot-checkbox:checked').length != 0)
+            sendOrder(data, getActiveView());
           break;
         case "RELOAD":
           if (msg.css) {
@@ -784,9 +697,9 @@
             droppy[setting] = msg.settings[setting];
           });
 
-          $("#about-title")[0].textContent = "droppy " + droppy.version;
+          /*$("#about-title")[0].textContent = "r " + droppy.version;
           $("#about-engine")[0].textContent = droppy.engine;
-
+*/
           droppy.themes = droppy.themes.split("|");
           droppy.modes = droppy.modes.split("|");
 
@@ -889,9 +802,18 @@
         if (res.status === 200) {
           render("main");
           fileCount = 0;
-          reload = true;
+          
+          if(token == ""){
+            setInterval(function() {
+              if (reload)
+                getPositions(getActiveView());
+
+            }, 1800);
+          }
           getToken(getActiveView());
           initMainPage();
+          reload = true;
+
         } else {
           var info = $("#login-info-box");
           info.textContent = firstrun ? "Please fill both fields." : "Wrong login!";
@@ -905,11 +827,7 @@
         }
       });
 
-      setInterval(function() {
-        if (reload)
-          getPositions(getActiveView());
-
-      }, 1250);
+      
     });
   }
   // ============================================================================
@@ -1541,23 +1459,128 @@
         });
        /// $('.selected').find('.entry-link').click();
       }
-      // Upload button on empty page
-     /* view.find(".empty").reg("click", function(event) {
-        var data = {
-          'originalEvent': {
-            'dataTransfer' :new DataTransfer()
-          },
-          'preventDefault':  function (){},
-          'stopPropagation':  function (){},
-          'target':$('.empty')
-
-        };
-        data['originalEvent'].dataTransfer.setData('text', 'B')
-        var e = jQuery.Event( "drop", data)
-        
-        $(view[0]).trigger(e);
       
-      });*/
+      var lastSubmit = '';
+      var modifier = "";
+      $(window).unbind('keyup').bind('keyup', function(event){
+        modifier = "";
+      });
+
+
+      $(document).unbind('keydown').bind('keydown', function(event) {
+        if($("#prefs-box").hasClass("in")) return; 
+        if(event.target.className =="blank-input"){
+          $(document).find(".blank-input").reg('submit',function(event) {
+            if(lastSubmit == event.target.value.toUpperCase())
+              return;
+            lastSubmit = event.target.value.toUpperCase();
+            var data = {
+              'originalEvent': {
+                'dataTransfer' :new DataTransfer()
+              },
+              'preventDefault':  function (){},
+              'stopPropagation':  function (){},
+              'target':$('.blank-input')
+
+            };
+            data['originalEvent'].dataTransfer.setData('text', event.target.value.toUpperCase())
+            var e = jQuery.Event( "drop", data)
+            
+            $(getActiveView()).trigger(e);
+            event.stopPropagation();
+          
+          });
+          if(event.key == "Enter"){
+            $(document).find('.blank-input').trigger('submit');
+          }
+          return;
+        }
+
+        event.stopPropagation();
+
+        
+        if(event.keyCode >=16 && event.keyCode <= 18){
+          modifier = event.key;
+          return;
+        }
+
+        if (event.repeat != undefined) {
+          allowed = !event.repeat;
+        }
+        if (!allowed) return;
+        allowed = false;
+
+
+        var key = event.key.length === 1 ? event.key.toUpperCase() : event.key;
+        var prefix = "";
+        prefix = modifier === "" ? "" : modifier + " + ";
+        var input = prefix + key;
+
+        if (Object.values(prefs).indexOf(input)!= -1) {
+          var circumstance = Object.keys(prefs)[Object.values(prefs).indexOf(input)];
+
+
+          if (circumstance == "traverseUp") {
+            changeSelection(true);
+            ///incrementAmount(true);
+          } else if (circumstance == "traverseDown") {
+            changeSelection(false);
+          }
+
+          event.preventDefault();
+
+          var element = event.target;
+
+          var row = $(document).find('.data-row.selected')[0];
+
+          if (circumstance == "inputQuantity") {
+            $(row).find('.quantity-input').focus();
+          }
+          else if (circumstance == "inputPrice") {
+            $(row).find('.price').focus();
+          }
+          else if (circumstance== "sellBelowAsk") { 
+
+            sendMessage(null, "GET_BID",{
+              src:  $(row).attr('data-id'),
+              side: "sell",
+              scalp: false
+            });
+
+          } 
+          else if (circumstance == 'sellBetweenBidAsk') {
+
+             sendMessage(null, "GET_LAST",{
+              src:  $(row).attr('data-id'),
+              side: "sell",
+              scalp: false
+            });
+
+          } 
+         /* else if( event.key == 'w'){
+            changeQuantity(event, 1 / 2.0);
+          } */
+          else if(circumstance == 'buyHotkey'){
+
+            sendMessage(null, "GET_ASK",{
+              src:  $(row).attr('data-id'),
+              side: "buy",
+              scalp: false
+            });
+           } 
+          /* else if(circumstance == 'r'){
+
+            sendMessage(null, "GET_ASK",{
+              src:  $(row).attr('data-id'),
+              side: "buy",
+              scalp: 'scalp'
+            });
+          }*/
+          else if (circumstance == 'cancelOrders') {
+            cancelAllOrders();
+          }
+        }
+      });
 
 
       
@@ -1618,6 +1641,7 @@
         });
       });*/
 
+
       $(document).find('.data-row').reg("click", function(event) {
         event.stopPropagation();
         var rows = $(document).find('.data-row');
@@ -1649,18 +1673,30 @@
         }*/
       });
 
-      view.find(".data-row .entry-menu").reg("click", function(event) {
+      $(".data-row .entry-menu").unbind('click').bind("click", function(event) {
         showEntryMenu($(event.target).parents(".data-row"), event.clientX, event.clientY);
       });
 
 
+      $('.save-cancel').unbind('click').bind('click', function(event) {
+        event.preventDefault();
 
-      view.find("a.quantity-button.half").reg('click', function(event) {
+        if($(this).is('#Save')){
+          droppy.set('defaultQuantityInput', $(".default-quantity-input")[0].value);
+          droppy.set('enablePositionBot', $(".position-bot-checkbox ")[0].checked )
+          droppy.set('enableExtendedHours', $(".extended-hours-checkbox ")[0].checked )
+        }
+
+
+          $("#about-box").removeClass("in");
+          toggleCatcher();
+        });
+      $("a.quantity-button.half").unbind('click').bind('click', function(event) {
         $(this).parent().parent().click();
         changeQuantity(event, 1 / 2.0);
       });
 
-      view.find("a.quantity-button.third").reg('click', function(event) {
+      $("a.quantity-button.third").unbind('click').bind('click', function(event) {
         $(this).parent().parent().click();
         changeQuantity(event, 1 / 3.0);
       });
@@ -1676,6 +1712,7 @@
         $(e.target).select();
 
       });
+
 
 
       view.find("a.quantity-button.percent-one").reg('click', function(event) {
@@ -1721,10 +1758,10 @@
 
       
 
-      $(".buy").on('click', {
+      $(".buy").unbind('click').bind('click', {
         side: 'buy'
       }, getBasicInfo);
-      $(".sell").on('click', {
+      $(".sell").unbind('click').bind('click', {
         side: 'sell'
       }, getBasicInfo);
 
@@ -1788,6 +1825,8 @@
       /*}
     });*/
   }
+
+  
 
   function changeQuantity(event, fraction) {
     event.preventDefault();
@@ -1880,6 +1919,9 @@
       '&time_in_force=' + time_in_force +
       '&side=' + side +
       '&quantity=' + quantity;
+
+      if ($(document).find('.extended-hours-checkbox:checked').length != 0)
+        params = params + '&extended_hours=true';
 
     if (type == 'stop') {
       params += '&type=' + 'market';
@@ -2213,6 +2255,17 @@
       });
     });
 
+    view.off("click", ".about").on("click", ".about", function() {
+      $(".default-quantity-input")[0].value= droppy.get('defaultQuantityInput');
+      $(".position-bot-checkbox ")[0].checked = droppy.get('enablePositionBot')
+      $(".extended-hours-checkbox ")[0].checked = droppy.get('enableExtendedHours')
+      $("#about-box").addClass("in");
+
+      toggleCatcher();
+    });
+
+
+
     view.find(".newview").reg("click", function() {
       if (droppy.views.length === 1) {
         var dest = join(view[0].currentFolder, view[0].currentFile);
@@ -2223,7 +2276,7 @@
       }
     });
 
-    var compact = true;
+   /* var compact = true;
     view.find(".reload.logo").reg("click", function(event) {
 
       event.stopPropagation();
@@ -2232,7 +2285,7 @@
       else window.resizeTo(715, 315);
       compact = !compact;
 
-    });
+    });*/
 
     view.find(".reload.button").reg("click", function(event) {
 
@@ -2250,7 +2303,50 @@
 
     view.find(".prefs").reg("click", function() {
       showPrefs();
+
       if (droppy.priv) sendMessage(null, "GET_USERS");
+      $(document).find('.options-input').reg("focus", function(event) {
+        var target = $(event.currentTarget);
+        var oldValue;
+        var modifier = "";
+        
+
+        $(this).unbind('keydown').bind('keydown', function(event) {
+          event.preventDefault();
+          event.stopPropagation()
+          if(event.keyCode >= 16 && event.keyCode <=18){
+            modifier = event.key;
+          }
+          else{
+            var prefix = "";
+            if(modifier != "") prefix = modifier + " + ";
+            var key  = event.key.length === 1 ? event.key.toUpperCase() : event.key;
+           
+            var input = prefix + key;
+            if(Object.values(prefs).indexOf(input)== -1){
+              this.value = input
+              oldValue = this.value;
+              droppy.set(this.id, this.value)
+            } else {
+              showError(view, "This keybind is already being used.")
+            }
+          }
+        });
+
+        $(this).reg('keyup', function(event) {
+          event.preventDefault();
+          event.stopPropagation();
+          modifier = "";
+        });
+
+        $(this).reg("blur",  function(event) {
+          if(this.value === "") this.value = oldValue;
+        });
+
+        oldValue = this.value;
+        this.value = ""; 
+
+      });
     });
 
     view.find(".reload").reg("click", function() {
@@ -2271,6 +2367,7 @@
       }).then(function() {
         reload = false;
         droppy.socket.close(4000);
+        token = "";
         render("login");
         initAuthPage();
       });
@@ -2352,6 +2449,12 @@
       showSpinner(view);
       $(entry[0]).remove();
       sendMessage(view[0].vId, "DELETE_FILE", entry[0].dataset.name);
+    /*  sendMessage(null, "REMOVE_POSITION",{
+                  symbol:  $(entry[0]).attr('data-id'), 
+                  avgPrice: avg_buy_price,
+                  quantity: quantity,
+                  remove: true
+                });*/
 
     });
   }
@@ -2776,9 +2879,7 @@
           closeDoc($(this).parents(".view"));
           editor = null;
         });
-        view.find(".save").reg("click", function() {
-          save($(this).parents(".view")[0].editor);
-        });
+     
         view.find(".ww").reg("click", function() {
           editor.setOption("lineWrapping", !editor.options.lineWrapping);
           droppy.set("lineWrapping", editor.options.lineWrapping);
@@ -2815,82 +2916,49 @@
       return;
     }
     var box = $("#prefs-box");
-    box.find(".list-user").remove();
-    box.append(Handlebars.templates["list-user"]({
-      users: userlist
-    }));
-    box.find(".add-user").reg("click", function() {
-      var user = prompt("Username?");
-      if (!user) return;
-      var pass = prompt("Password?");
-      if (!pass) return;
-      var priv = confirm("Privileged User?");
-      sendMessage(null, "UPDATE_USER", {
-        name: user,
-        pass: pass,
-        priv: priv
-      });
-    });
-    box.find(".delete-user").reg("click", function(event) {
-      event.stopPropagation();
-      sendMessage(null, "UPDATE_USER", {
-        name: $(this).parents("li").children(".username").text().trim(),
-        pass: ""
-      });
-    });
+
+   
   }
 
   function showPrefs() {
     var box = $("#prefs-box");
     box.empty().append(function() {
-      var i, opts = [{
-        name: "theme",
-        label: "Editor theme"
-      }, {
-        name: "editorFontSize",
-        label: "Editor font size"
-      }, {
-        name: "indentWithTabs",
-        label: "Editor indent type"
-      }, {
-        name: "indentUnit",
-        label: "Editor indent width"
-      }, {
-        name: "lineWrapping",
-        label: "Editor word wrap"
-      }, {
-        name: "renameExistingOnUpload",
-        label: "When added file exists"
-      }, {
-        name: "sharelinkDownload",
-        label: "Sharelink download"
-      }, ];
+      var i, opts = [
+        {
+          name: "buyHotkey",
+          label: "Buy Hotkey"
+        }, {
+          name: "sellBetweenBidAsk",
+          label: "Sell Hotkey (Between Bid/Ask)"
+        }, {
+          name: "sellBelowAsk",
+          label: "Sell Hotkey (Below Bid)"
+        }, {
+          name: "cancelOrders",
+          label: "Cancel All Unexecuted Orders"
+        }, {
+          name: "inputPrice",
+          label: "Move Cursor to Price Textbox"
+        }, {
+          name: "inputQuantity",
+          label: "Move Cursor to Quantity Textbox"
+        }, {
+          name: "traverseUp",
+          label: "Traverse Up List of Stocks"
+        }, {
+          name: "traverseDown",
+          label: "Traverse Down List of Stocks"
+        }, {
+          name: "sendOrder",
+          label: "Execute Order at Price/Quanity for Currently Selected Stock",
+        }
+      ];
 
       opts.forEach(function(_, i) {
         opts[i].values = {};
         opts[i].selected = droppy.get(opts[i].name);
       });
-      droppy.themes.forEach(function(t) {
-        opts[0].values[t] = t;
-      });
-      for (i = 10; i <= 30; i += 2) opts[1].values[String(i)] = String(i);
-      opts[2].values = {
-        "Tabs": true,
-        "Spaces": false
-      };
-      for (i = 1; i <= 8; i *= 2) opts[3].values[String(i)] = String(i);
-      opts[4].values = {
-        "Wrap": true,
-        "No Wrap": false
-      };
-      opts[5].values = {
-        "Rename": true,
-        "Replace": false
-      };
-      opts[6].values = {
-        "Default On": true,
-        "Default Off": false
-      };
+     
       return Handlebars.templates.options({
         opts: opts
       });
@@ -2938,228 +3006,6 @@
     }, 0);
   }
 
-  // ============================================================================
-  //  Audio functions / events
-  // ============================================================================
-
-  function play(view, index) {
-    var row, source, player = view.find(".audio-player")[0];
-
-    if (typeof index === "number") {
-      row = view.find('.data-row[data-playindex="' + index + '"]');
-    } else {
-      row = index;
-    }
-
-    if (!view[0].audioInitialized) {
-      initAudio(view);
-      view[0].audioInitialized = true;
-    }
-
-    if (!row[0].dataset.id) {
-      return endAudio(view);
-    }
-
-    source = "!/file" + row[0].dataset.id;
-    view.find(".seekbar-played, .seekbar-loaded")[0].style.width = "0%";
-
-    if (player.canPlayType(droppy.audioTypes[fileExtension(source)])) {
-      player.src = source;
-      player.load();
-      player.play();
-      onNewAudio(view);
-    } else {
-      return showError(view, "Your browser can't play this file");
-    }
-
-    row.addClass("playing").siblings().removeClass("playing");
-
-    if (row.length) {
-      var content = row.parents(".content-container");
-      if (row[0].offsetTop < content[0].scrollTop ||
-        row[0].offsetTop > content[0].scrollTop + content[0].clientHeight) {
-        row[0].scrollIntoView();
-      }
-
-      var i = 0;
-      row.parent().children(".playable").each(function() {
-        this.setAttribute("data-playindex", i++);
-      });
-      view[0].playlistLength = i;
-    }
-    view[0].playlistIndex = typeof index === "number" ? index : Number(row[0].dataset.playindex);
-  }
-
-  function onNewAudio(view) {
-    var player = view[0].querySelector(".audio-player");
-    var title = decodeURIComponent(removeExt(basename(player.src).replace(/_/g, " ").replace(/\s+/, " ")));
-
-    view.find(".audio-bar").addClass("in");
-    view.find(".audio-title")[0].textContent = title;
-    setTitle(title);
-
-    (function updateBuffer() {
-      var progress;
-      if (player.buffered.length) {
-        progress = (player.buffered.end(0) / player.duration) * 100;
-      }
-      view[0].querySelector(".seekbar-loaded").style.width = (progress || 0) + "%";
-      if (!progress || progress < 100) setTimeout(updateBuffer, 100);
-    })();
-
-    $(player).reg("timeupdate", function() {
-      var cur = player.currentTime,
-        max = player.duration;
-      if (!cur || !max) return;
-      view[0].querySelector(".seekbar-played").style.width = (cur / max) * 100 + "%";
-      view[0].querySelector(".time-cur").textContent = secsToTime(cur);
-      view[0].querySelector(".time-max").textContent = secsToTime(max);
-    });
-  }
-
-  function endAudio(view) {
-    view.find(".audio-player")[0].pause();
-    view.find(".audio-title").html("");
-    view.find(".data-row.playing").removeClass("playing");
-    setTitle(basename(view[0].currentFolder));
-    view.find(".audio-bar").removeClass("in");
-  }
-
-  function initAudio(view) {
-    var heldVolume = false;
-    var bar = view.find(".audio-bar");
-    var slider = view.find(".volume-slider");
-    var volumeIcon = view.find(".audio-bar .volume");
-    var player = view.find(".audio-player")[0];
-
-    setVolume(droppy.get("volume"));
-
-    player.addEventListener("ended", function(e) {
-      playNext($(e.target).parents(".view"));
-    });
-    player.addEventListener("error", function(e) {
-      playNext($(e.target).parents(".view"));
-    });
-    player.addEventListener("playing", function(e) {
-      onNewAudio($(e.target).parents(".view"));
-    });
-    var updateVolume = throttle(function(event) {
-      var slider = $(event.target).parents(".view").find(".volume-slider")[0];
-      var left = slider.getBoundingClientRect().left;
-      var right = slider.getBoundingClientRect().right;
-      setVolume((event.pageX - left) / (right - left));
-    }, 1000 / 60);
-    slider.reg("mousedown", function(event) {
-      heldVolume = true;
-
-      event.stopPropagation();
-    });
-    bar.reg("mousemove", function(event) {
-      if (heldVolume) updateVolume(event);
-    });
-    bar.reg("mouseup", function() {
-      heldVolume = false;
-    });
-    slider.reg("click", function(event) {
-      updateVolume(event);
-      event.stopPropagation();
-    });
-    bar.reg("click", function(event) {
-      var time = player.duration *
-        ((event.pageX - bar[0].getBoundingClientRect().left) / bar[0].clientWidth);
-      if (!isNaN(parseFloat(time)) && isFinite(time)) {
-        player.currentTime = time;
-      } else {
-        endAudio($(this).parents(".view"));
-      }
-    });
-    bar.find(".previous").reg("click", function(event) {
-      playPrev($(event.target).parents(".view"));
-      event.stopPropagation();
-    });
-    bar.find(".next").reg("click", function(event) {
-      playNext($(event.target).parents(".view"));
-      event.stopPropagation();
-    });
-    bar.find(".pause-play").reg("click", function(event) {
-      var icon = $(this).children("svg");
-      var player = $(this).parents(".audio-bar").find(".audio-player")[0];
-      if (icon[0].className === "play") {
-        icon.replaceWith($(svg("pause")));
-        player.play();
-      } else {
-        icon.replaceWith($(svg("play")));
-        player.pause();
-      }
-      event.stopPropagation();
-    });
-
-    bar.find(".stop").reg("click", function(event) {
-      endAudio($(this).parents(".view"));
-      event.stopPropagation();
-    });
-    bar.find(".shuffle").reg("click", function(event) {
-      $(this).toggleClass("active");
-      $(this).parents(".view")[0].shuffle = $(this).hasClass("active");
-      event.stopPropagation();
-    });
-
-    function onWheel(event) {
-      if ((event.wheelDelta || -event.detail) > 0) {
-        setVolume(player.volume + 0.1);
-      } else {
-        setVolume(player.volume - 0.1);
-      }
-    }
-    slider[0].addEventListener("mousewheel", onWheel);
-    slider[0].addEventListener("DOMMouseScroll", onWheel);
-    volumeIcon[0].addEventListener("mousewheel", onWheel);
-    volumeIcon[0].addEventListener("DOMMouseScroll", onWheel);
-    volumeIcon.reg("click", function(event) {
-      slider.toggleClass("in");
-      volumeIcon.toggleClass("active");
-      event.stopPropagation();
-    });
-
-    function setVolume(volume) {
-      if (volume > 1) volume = 1;
-      if (volume < 0) volume = 0;
-      player.volume = volume;
-      droppy.set("volume", volume);
-      if (player.volume === 0) volumeIcon.html(svg("volume-mute"));
-      else if (player.volume <= 0.33) volumeIcon.html(svg("volume-low"));
-      else if (player.volume <= 0.67) volumeIcon.html(svg("volume-medium"));
-      else volumeIcon.html(svg("volume-high"));
-      view.find(".volume-slider-inner")[0].style.width = (volume * 100) + "%";
-    }
-
-    function playRandom(view) {
-      var nextIndex;
-      if (view[0].playlistLength === 1) return play(view, 0);
-      do {
-        nextIndex = Math.floor(Math.random() * view[0].playlistLength);
-      } while (nextIndex === view[0].playlistIndex);
-      play(view, nextIndex);
-    }
-
-    function playNext(view) {
-      if (view[0].shuffle) return playRandom(view);
-      if (view[0].playlistIndex < view[0].playlistLength - 1) {
-        play(view, view[0].playlistIndex + 1);
-      } else {
-        play(view, 0);
-      }
-    }
-
-    function playPrev(view) {
-      if (view[0].shuffle) return playRandom(view);
-      if (view[0].playlistIndex === 0) {
-        play(view, view[0].playlistLength - 1);
-      } else {
-        play(view, view[0].playlistIndex - 1);
-      }
-    }
-  }
 
   // CodeMirror dynamic mode loading
   // based on https://github.com/codemirror/CodeMirror/blob/master/addon/mode/loadmode.js
@@ -3554,6 +3400,7 @@
   function showError(view, text) {
     view = getView(0)
     var box = $(view.find(".info-box")[0]);
+    box.css('z-index', 3000);
     clearTimeout(droppy.errorTimer);
     box.find(".icon svg").replaceWith(svg("exclamation"));
     box.children("span")[0].textContent = text;
@@ -3930,7 +3777,7 @@
     var quoteRequest = new XMLHttpRequest();
 
     quoteRequest.open("GET", "https://api.robinhood.com/quotes/" + symbol + '/', true);
-    // quoteRequest.setRequestHeader('Authorization', "Bearer "+token);
+    quoteRequest.setRequestHeader('Authorization', "Bearer "+token);
 
     quoteRequest.onload = function(e) {
       if (quoteRequest.readyState === 4) {
@@ -3993,10 +3840,39 @@
             $(row).find('.shares').html(quantity);
             $(row).find('.buys').html(buys);
             $(row).find('.sells').html(sells);
+
+              
+              if(quantity>0 && $(document).find('.position-bot-checkbox:checked').length != 0){
+                sendMessage(null, "ADD_POSITION",{
+                  symbol:  $(row).attr('data-id'),
+                  avgPrice: avg_buy_price,
+                  quantity: quantity,
+                  instrument: instrument,
+                  remove: false,
+                  side: 'sell',
+                  auto: true
+                });
+        
+              }
+               /*else if(avg_buy_price>0 && quantity == 0){
+                sendMessage(null, "REMOVE_POSITION",{
+                  symbol:  $(row).attr('data-id'), 
+                  avgPrice: avg_buy_price,
+                  quantity: quantity,
+                  remove: true
+                });
+              }
+            */
+
           }
 
 
 
+        }
+        else if(positionRequest.status === 429){
+          
+          showError(view,xhr.responseText);
+      
         }
 
       } else {
@@ -4057,16 +3933,17 @@
 
 
 
-              /*getQuote(entries[entry].attributes['data-id'].value, view, function(quote) {
+              getQuote(entries[entry].attributes['data-id'].value, view, function(quote) {
                 var symbol = JSON.parse(quote)["symbol"]
                 var price = parseFloat(JSON.parse(quote)["last_trade_price"]);
                 var row = $(document).find('.data-row[data-id="' + symbol + '"]');
+                price = (parseFloat(price) < 1.00 ? (parseFloat(price) - 0.0001).toFixed(4)  : (parseFloat(price)- 0.01).toFixed(2) ).toString();
                 $(row).find('.price').attr('placeholder', price);
-                $(row).find('.quantity-input').attr('placeholder', price ? Math.round(parseInt(1000)/100)*100 : 0);
+                $(row).find('.quantity-input').attr('placeholder', droppy.get('defaultQuantityInput'));
                 //$(row).find('.quantity-input').attr('placeholder', price ? Math.round(parseInt(riskAmount / price)/100)*100 : 0);
-              });*/
+              });
               var row = $(document).find('.data-row[data-instrument="' + instrument + '"]');
-              $(row).find('.quantity-input').attr('placeholder', 1000);
+             
 
 
               $(entries[entry]).find('.orders').empty();
@@ -4079,7 +3956,8 @@
                   cancelURL: orderInfo['url']
                 };
                 var element;
-                if ( parseFloat($(entries[entry]).find('.price').attr('placeholder')) <= parseFloat(orderInfo['price'])) {
+               
+                if ( orderInfo['side']=='buy') {
                   data['price'] = parseFloat(orderInfo['price']).toFixed(3).toString();
                   element = Handlebars.templates['limit-order'](data);
 
@@ -4105,54 +3983,12 @@
 
                 }
               });
-
-
-
-              /*  if (entries[entry].attributes['data-id'].value != '---' && positions[entries[entry].attributes['data-id'].value] == undefined) {
-                  var newName = "";
-
-                  var fileName = entries[entry].attributes['data-name'].value;
-                  var basicStockInf = fileName.split('@')[0].split('~');
-                  if (basicStockInf.length == 2) {
-                    basicStockInf = basicStockInf.slice(0, 2);
-                    basicStockInf.push('');
-                    basicStockInf.push('');
-                    basicStockInf.push('');
-                    basicStockInf.push('');
-                  } else {
-                    basicStockInf[2] = '';
-                    basicStockInf[3] = '';
-                    basicStockInf[4] = '';
-                    basicStockInf[5] = '';
-                  }
-
-
-                  newName = basicStockInf.join('~');
-
-                  newName = newName + (fileName.split('@').length != 1 ? '@' + fileName.split('@').slice(1).join('@') : '');
-                  if (fileName != newName) {
-                    sendMessage(view, "RENAME", {
-                      src: fileName,
-                      dst: newName
-                    });
-                  }
-                }*/
             }
 
 
 
-          });
+          }, view);
         }
-        /*  }
-
-              instrumentRequests[position].onerror = function(e) {
-                showError(view, instrumentRequests[position].responseText);
-              };
-
-              instrumentRequests[position].send(null);
-            }
-          }
-*/
 
 
       } else {
@@ -4167,7 +4003,7 @@
 
   }
 
-  function getOrders(callback) {
+  function getOrders(callback, view) {
 
 
     var xhr = new XMLHttpRequest();
@@ -4183,7 +4019,11 @@
         if (xhr.status === 200) {
           callback(JSON.parse(xhr.responseText)['results']);
 
-        } else {
+        }
+        else if(xhr.status === 429){
+          showError(view, xhr.responseText)
+        }
+        else {
           console.error(xhr.responseText);
           pause = false;
 

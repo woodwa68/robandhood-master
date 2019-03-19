@@ -20,10 +20,20 @@ import tosdb
 import json
 from multiprocessing import Process, Pipe
 
+# This example will likely not work with the native OSX backend.
+# Uncomment the following lines to use the qt5 backend instead.
+#
+# import matplotlib
+# matplotlib.use('qt5agg')
+#
+# Alternatively, with Python 3.4+ you may add the line
+#
+
+#
+# immediately after the ``if __name__ == "__main__"`` check.
 
 import matplotlib.pyplot as plt
-
-
+from matplotlib.patches import Polygon
 plt.rcParams.update({'font.size': 8})
 from datetime import timedelta
 import datetime, time
@@ -36,14 +46,16 @@ from decimal import Decimal
 from math import floor
 
 
-refreshInterval = 25
+refreshInterval = 300
 
 
 class ProcessPlotter(object):
     def __init__(self):
 
-        self.priceData = {}
+        self.data = {}
+      
         self.stock = 'SPY'
+        self.positions = [];
 
     def terminate(self):
         plt.close('all')
@@ -58,25 +70,52 @@ class ProcessPlotter(object):
                 self.terminate()
                 return False
  
-            
+                
             else:
-                self.stock = command
+                self.stock = command['symbol']
 
-                if (command in self.b1.items()) == False:
-                    self.b1.add_items(command)
+                if (self.stock in self.b1.items()) == False:
+                    self.b1.add_items(command['symbol']);            
+                self.positions.append(command['symbol'])
+                self.data[command['symbol']] = command;
+              
+                self.pipe.send('ADDED')
+
+                # elif ((command['symbol'] in self.b1.items()) == True and command['remove']== True):
+                #     self.b1.remove_items(command['symbol'])
             
               
-                    self.priceData[command] = [[],[],[]]
-                    self.pipe.send('ADDED')
+                #     self.data[command['symbol']] = {};
+                #     self.pipe.send('REMOVED')
         
-                else:
-                    total_frame = self.b1.total_frame(labels=True);
-                    self.pipe.send(json.dumps(total_frame))
+                
 
+        for item in self.positions:
+
+            bid = float( self.b1.get(item,'BID',check_indx=False));
+            ask = float( self.b1.get(item,'ASK',check_indx=False));
+            priceBeforeRound = Decimal((bid+ask)/2.0)
+            priceBeforeRound = float(round(priceBeforeRound, 2))
+       
+
+            if(self.data[item] != 'empty'  and priceBeforeRound != 0 and (float(self.data[item]['avgPrice']) - priceBeforeRound > 0.11)):
+                print('stop-loss-trigger')
+                self.data[item]['price'] = bid - .05
+                self.socketIO.emit('getinfo', self.data[item])
+             
+            
+              
+                self.positions.remove(item);
+                self.data[item] = 'empty';
+
+    
+
+
+       
         return True
 
     def __call__(self, pipe):
-        
+        print('starting plotter...')
         tosdb.init(dllpath="C:/TOSDataBridge-master/bin/Release/Win32/tos-databridge-0.9-x86.dll")
         b1 = tosdb.TOSDB_DataBlock(50, True);
         
@@ -86,11 +125,11 @@ class ProcessPlotter(object):
         b1.add_topics('ASK');
         
         b1.add_topics('BID');
-        b1.add_items('SPY')
+   
         self.b1 = b1;
-
+        self.positions = [];
         for item in b1.items():
-            self.priceData[item] = [[],[],[]];
+            self.data = {};
 
 
         self.pipe = pipe
@@ -98,11 +137,11 @@ class ProcessPlotter(object):
         self.fig.set_size_inches((1,1))
         self.fig.tight_layout()
         
-
+        self.socketIO = sio('localhost', 5000,  wait_for_connection=False)
         timer = self.fig.canvas.new_timer(interval=refreshInterval)
         timer.add_callback(self.call_back)
         timer.start()
-   
+        
         plt.show()
 
 
@@ -127,14 +166,8 @@ class NBPlot(object):
             send(None)
         else:
           
-            send(line.strip())
+            send(line)
             return recv()
-
-    def check_for_triggers(self):
-        
-        command = self.plot_pipe.recv()
-        print (command)
-        return command;
 
 
 
@@ -148,61 +181,20 @@ def main():
     socketio = SocketIO(app)
 
 
-    @socketio.on('GET_BID')
-    def getBid(message):
-        print(message)
 
-        index = 1
-    
-        response = json.loads(pl.plot(message['src']))
-        response = Decimal(float(response[message['src']][index]) - .05);
-        response = float(round(response,2))
-
-        emit('myresponse', {'price': response, 'side':message['side']} )
-
-    @socketio.on('GET_LAST')
-    def getLast(message):
-        print(message)
-
-        response = json.loads(pl.plot(message['src']))
-        
-        priceBeforeRound = (float(response[message['src']][0])+float(response[message['src']][1]))/2.0
-        priceBeforeRound = Decimal(priceBeforeRound)
-        priceBeforeRound = float(round(priceBeforeRound, 2))
-        
-        if(response[message['src']][2] == "0.05"):
-            priceBeforeRound = floor(priceBeforeRound * 20) / 20
-            
-        print(response)
-        emit('myresponse', {'price': priceBeforeRound, 'side' :message['side'],})
-
-    @socketio.on('GET_ASK')
-    def getAsk(message):
-        print(message)
-        
-        index = 0
-    
-        response = json.loads(pl.plot(message['src']))
-        response = Decimal(float(response[message['src']][index]) + .05); 
-        response = float(round(response,2))
-
-       
-        emit('myresponse', {'price': response, 'side':message['side'], 'scalp':message['scalp']})
-
-    @socketio.on('ADD_SYMBOL')
+    @socketio.on('ADD_POSITION')
     def addSymbol(message):
         print(message)
-        pl.plot(message['src'])
+      
+        pl.plot(message)
+
+    @socketio.on('REMOVE_POSITION')
+    def removeSymbol(message):
+        print(message)   
+        pl.plot(message)
 
 
-
-    @socketio.on('getinfo')
-    def getinfo(message):
-        print(message)
-        emit('myresponse', message, broadcast=True)
-   
-
-    socketio.run(app)
+    socketio.run(app, port=5002)
 
 if __name__ == '__main__':
     main()
